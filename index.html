@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Voice Wave Souvenir</title>
+  <title>Hong Kong Skyline Souvenir</title>
   <style>
     :root {
       --bg:#f5f5f7;
@@ -12,177 +12,85 @@
       --card:rgba(255,255,255,.78);
       --line:rgba(0,0,0,.08);
       --accent:#f8d000;
-      --accent-dark:#d5b200;
-      --brown:#6b3f32;
     }
     * { box-sizing:border-box; }
     html, body { width:100%; height:100%; overflow:hidden; }
     body {
       margin:0;
-      font-family:-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Segoe UI, sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(248,208,0,.28), transparent 30%),
-        linear-gradient(180deg, #fff 0%, var(--bg) 100%);
+      font-family:-apple-system, BlinkMacSystemFont, "SF Pro Display", Segoe UI, sans-serif;
+      background:linear-gradient(180deg, #fff 0%, var(--bg) 100%);
       color:var(--ink);
     }
     .app {
       width:100vw;
       height:100vh;
       display:grid;
-      grid-template-columns:360px 1fr;
+      grid-template-columns:320px 1fr;
       gap:18px;
       padding:18px;
     }
     aside, #viewer {
       border:1px solid var(--line);
       background:var(--card);
-      backdrop-filter:blur(28px) saturate(180%);
-      -webkit-backdrop-filter:blur(28px) saturate(180%);
+      backdrop-filter:blur(24px);
       border-radius:28px;
-      box-shadow:0 24px 70px rgba(0,0,0,.10);
       overflow:hidden;
     }
-    aside {
-      display:flex;
-      flex-direction:column;
-      padding:24px;
-      min-height:0;
-    }
-    .eyebrow {
-      width:max-content;
-      padding:7px 11px;
-      border-radius:999px;
-      background:var(--accent);
-      font-size:12px;
-      font-weight:800;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-    }
-    h1 {
-      margin:18px 0 10px;
-      font-size:42px;
-      line-height:.98;
-      letter-spacing:-.045em;
-    }
-    p { color:var(--muted); line-height:1.45; margin:0 0 18px; }
-    .controls { margin-top:auto; }
-    button {
-      appearance:none;
-      border:0;
-      width:100%;
-      padding:15px 16px;
-      border-radius:16px;
-      font-size:15px;
-      font-weight:750;
-      cursor:pointer;
-      color:#111;
-      background:var(--accent);
-      box-shadow:inset 0 -1px 0 rgba(0,0,0,.12), 0 10px 24px rgba(248,208,0,.26);
-      transition:transform .18s ease, box-shadow .18s ease, opacity .18s ease;
-    }
-    button:hover { transform:translateY(-1px); box-shadow:inset 0 -1px 0 rgba(0,0,0,.12), 0 14px 30px rgba(248,208,0,.34); }
-    button:active { transform:translateY(0); }
-    button.secondary { background:#1d1d1f; color:white; box-shadow:0 10px 24px rgba(0,0,0,.16); }
-    button.ghost { background:white; color:var(--ink); border:1px solid var(--line); box-shadow:none; }
-    button:disabled { opacity:.42; cursor:not-allowed; transform:none; }
-    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    label {
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      margin:18px 0 8px;
-      color:var(--ink);
-      font-size:13px;
-      font-weight:700;
-    }
-    label span { color:var(--muted); font-weight:650; }
+    aside { display:flex; flex-direction:column; padding:24px; }
+    h1 { font-size:32px; line-height:1; margin:0 0 12px; letter-spacing:-.04em; }
+    p { color:var(--muted); line-height:1.45; }
+    label { font-size:13px; margin-top:16px; display:flex; justify-content:space-between; font-weight:700; }
+    label span { color:var(--muted); }
     input[type="range"] { width:100%; accent-color:var(--accent); }
-    canvas#wave {
-      width:100%;
-      height:92px;
-      border-radius:18px;
-      background:#111;
-      margin:14px 0 2px;
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+    button {
+      margin-top:auto;
+      padding:14px;
+      border-radius:14px;
+      border:none;
+      background:var(--accent);
+      font-weight:bold;
+      cursor:pointer;
     }
-    .status {
-      min-height:20px;
-      margin-top:10px;
-      color:var(--muted);
-      font-size:13px;
-    }
-    #viewer { position:relative; min-width:0; min-height:0; }
-    #viewer canvas { display:block; }
-    .topbar {
+    #viewer { position:relative; }
+    .hint {
       position:absolute;
-      z-index:3;
-      top:20px;
-      left:20px;
-      right:20px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      pointer-events:none;
-    }
-    .pill {
-      padding:10px 13px;
+      right:18px;
+      top:18px;
+      padding:10px 14px;
       border-radius:999px;
       background:rgba(255,255,255,.72);
       border:1px solid var(--line);
-      backdrop-filter:blur(18px);
-      color:var(--muted);
       font-size:13px;
+      color:var(--muted);
       font-weight:700;
+      z-index:2;
     }
-    .brand { color:var(--ink); }
-    @media (max-width: 860px) {
+    @media (max-width:860px) {
       html, body { overflow:auto; }
-      .app { min-height:100vh; height:auto; grid-template-columns:1fr; }
-      aside { min-height:460px; }
-      #viewer { height:58vh; min-height:420px; }
-      h1 { font-size:36px; }
+      .app { height:auto; min-height:100vh; grid-template-columns:1fr; }
+      #viewer { height:60vh; min-height:420px; }
     }
   </style>
 </head>
 <body>
   <main class="app">
     <aside>
-      <div class="eyebrow">Voice Souvenir</div>
-      <h1>Turn a voice into architecture.</h1>
-      <p>Record a message. The regular long strips become the base, while the brown front strips become a printable sound wave.</p>
+      <h1>Hong Kong Skyline Souvenir</h1>
+      <p>The front row is now a simplified 3D-printable Hong Kong landmark skyline, using one dark brown material only.</p>
 
-      <canvas id="wave" width="600" height="140"></canvas>
-      <div id="status" class="status">Ready to record.</div>
+      <label>Background slats <span id="slatCountText">82</span></label>
+      <input id="slatCount" type="range" min="45" max="130" value="82" />
 
-      <div class="controls">
-        <div class="row">
-          <button id="recordBtn" type="button">Record</button>
-          <button id="stopBtn" type="button" class="secondary" disabled>Stop</button>
-        </div>
-        <button id="playBtn" type="button" class="ghost" disabled>Play recording</button>
+      <label>Slat height <span id="backHeightText">5.2</span></label>
+      <input id="backHeight" type="range" min="3.5" max="7" step="0.1" value="5.2" />
 
-        <label>Number of slats <span id="slatCountText">72</span></label>
-        <input id="slatCount" type="range" min="32" max="120" value="72" />
+      <label>Model depth <span id="depthText">0.28</span></label>
+      <input id="depth" type="range" min="0.12" max="0.7" step="0.01" value="0.28" />
 
-        <label>Wave height <span id="heightText">1.8</span></label>
-        <input id="waveHeight" type="range" min="0.5" max="3.2" step="0.1" value="1.8" />
-
-        <label>Object depth <span id="depthText">0.22</span></label>
-        <input id="depth" type="range" min="0.08" max="0.6" step="0.01" value="0.22" />
-
-        <label>Logo size <span id="logoText">1.0</span></label>
-        <input id="logoSize" type="range" min="0.3" max="1.8" step="0.1" value="1.0" />
-
-        <button id="exportBtn" type="button">Export STL</button>
-      </div>
+      <button id="exportBtn">Export STL</button>
     </aside>
 
-    <section id="viewer">
-      <div class="topbar">
-        <div class="pill brand">3D preview</div>
-        <div class="pill">Drag to rotate · Scroll to zoom</div>
-      </div>
-    </section>
+    <section id="viewer"><div class="hint">Drag to rotate · Scroll to zoom</div></section>
   </main>
 
   <script type="module">
@@ -191,258 +99,241 @@
     import { STLExporter } from 'https://esm.sh/three@0.160.0/examples/jsm/exporters/STLExporter.js';
 
     const viewer = document.getElementById('viewer');
-    const statusEl = document.getElementById('status');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf5f5f7);
 
     const camera = new THREE.PerspectiveCamera(42, viewer.clientWidth / viewer.clientHeight, 0.1, 100);
-    camera.position.set(0, 4.4, 10);
+    camera.position.set(0, 4.4, 10.5);
 
-    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
     renderer.setSize(viewer.clientWidth, viewer.clientHeight);
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    viewer.prepend(renderer.domElement);
+    viewer.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = .35;
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x777777, 3));
-    const light = new THREE.DirectionalLight(0xffffff, 2.2);
-    light.position.set(4, 7, 5);
-    scene.add(light);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x777777, 2.8));
+    const key = new THREE.DirectionalLight(0xffffff, 2.1);
+    key.position.set(3, 6, 5);
+    scene.add(key);
 
     const model = new THREE.Group();
     scene.add(model);
 
-    const matBase = new THREE.MeshStandardMaterial({ color:0x6f4b38, roughness:.68 });
-    const matLong = new THREE.MeshStandardMaterial({ color:0x8a735c, roughness:.72 });
-    const matWaveA = new THREE.MeshStandardMaterial({ color:0x6b3f32, roughness:.74 });
-    const matWaveB = new THREE.MeshStandardMaterial({ color:0xcab89d, roughness:.72 });
-    const matDark = new THREE.MeshStandardMaterial({ color:0x2a2522, roughness:.8 });
-    const matLogo = new THREE.MeshStandardMaterial({ color:0xf8d000, roughness:.42, metalness:.05 });
-
-    let amplitudes = Array.from({length:72}, (_, i) => .35 + .25*Math.sin(i*.45) + Math.random()*.18);
-    let audioURL = null;
-    let recorder = null;
-    let chunks = [];
-    let liveAnalyser = null;
-    let liveData = null;
-    let recordingStream = null;
+    const brown = new THREE.MeshStandardMaterial({ color:0x6b472f, roughness:.72 });
+    const darkBrown = new THREE.MeshStandardMaterial({ color:0x5a3926, roughness:.78 });
 
     const $ = id => document.getElementById(id);
-    const slatCount = $('slatCount'), waveHeight = $('waveHeight'), depth = $('depth'), logoSize = $('logoSize');
-
-    function setStatus(text) { statusEl.textContent = text; }
 
     function clearGroup(g) {
       while (g.children.length) {
         const o = g.children.pop();
         o.geometry?.dispose?.();
-        if (Array.isArray(o.material)) o.material.forEach(m => m.dispose()); else o.material?.dispose?.();
+        o.material?.dispose?.();
       }
     }
 
-    function makeBox(w, h, d, x, y, z, mat) {
+    function box(g, w, h, d, x, y, z, mat=brown) {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-      mesh.position.set(x, y + h/2, z);
+      mesh.position.set(x, y + h / 2, z);
+      g.add(mesh);
       return mesh;
     }
 
-    function createLogo(scale) {
-      const g = new THREE.Group();
-      const stem = makeBox(.06*scale, .75*scale, .035, 0, 0, .18, matLogo);
-      g.add(stem);
-      for (const side of [-1, 1]) {
-        const leaf = new THREE.Mesh(new THREE.SphereGeometry(.18*scale, 24, 12), matLogo);
-        leaf.scale.set(1.35, .38, .09);
-        leaf.rotation.z = side * .62;
-        leaf.position.set(side*.16*scale, .5*scale, .18);
-        g.add(leaf);
-      }
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(.28*scale, .025*scale, 32, 80), matLogo);
-      ring.rotation.x = Math.PI/2;
-      ring.scale.y = .55;
-      ring.position.set(0, .15*scale, .18);
-      g.add(ring);
-      g.add(makeBox(.72*scale, .035*scale, .035, 0, 0, .18, matLogo));
-      return g;
+    function cyl(g, r, h, x, y, z, mat=brown, sides=32) {
+      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, sides), mat);
+      mesh.position.set(x, y + h / 2, z);
+      g.add(mesh);
+      return mesh;
     }
 
-    function resample(arr, n) {
-      if (!arr.length) return Array(n).fill(.2);
-      return Array.from({length:n}, (_, i) => arr[Math.floor(i * arr.length / n)] ?? 0);
+    function cone(g, r, h, x, y, z, mat=brown, sides=4) {
+      const mesh = new THREE.Mesh(new THREE.ConeGeometry(r, h, sides), mat);
+      mesh.position.set(x, y + h / 2, z);
+      mesh.rotation.y = Math.PI / 4;
+      g.add(mesh);
+      return mesh;
+    }
+
+    function lineDetail(g, x, y, z, w, h=.025, d=.035) { box(g, w, h, d, x, y, z, darkBrown); }
+    function verticalDetail(g, x, y, z, h, w=.025, d=.035) { box(g, w, h, d, x, y, z, darkBrown); }
+
+    function makeIFC(x) {
+      const g = new THREE.Group();
+      box(g,.55,4.1,.34,0,0,0);
+      box(g,.75,.22,.42,0,0,0);
+      cone(g,.36,.45,0,4.1,0,brown,4);
+      for(let i=0;i<14;i++) lineDetail(g,0,.45+i*.22,.19,.34,.012,.04);
+      for(let i=0;i<18;i++) verticalDetail(g,-.18+(i%3)*.18,.65+i*.16,.2,.04,.018,.04);
+      g.position.x=x; return g;
+    }
+
+    function makeClockTower(x) {
+      const g = new THREE.Group();
+      box(g,.38,2.45,.34,0,0,0);
+      box(g,.55,.12,.4,0,0,0);
+      cyl(g,.2,.24,0,2.45,0,brown,24);
+      cone(g,.2,.28,0,2.69,0,brown,24);
+      box(g,.07,.75,.12,0,2.95,0);
+      cyl(g,.09,.035,0,1.15,.2,darkBrown,24);
+      for(let i=0;i<5;i++) lineDetail(g,0,.35+i*.25,.2,.24,.015,.04);
+      g.position.x=x; return g;
+    }
+
+    function makeHSBC(x) {
+      const g = new THREE.Group();
+      box(g,.85,2.75,.34,0,0,0);
+      box(g,1.02,.08,.42,0,2.75,0);
+      for(let i=0;i<8;i++) lineDetail(g,0,.35+i*.28,.2,.72,.018,.04);
+      for(let i=0;i<5;i++) verticalDetail(g,-.42+i*.21,.2,.2,2.4,.018,.04);
+      for(let i=0;i<6;i++) {
+        const brace = box(g,.72,.025,.04,0,.55+i*.36,.22,darkBrown);
+        brace.rotation.z = i%2 ? .22 : -.22;
+      }
+      g.position.x=x; return g;
+    }
+
+    function makeBankOfChina(x) {
+      const g = new THREE.Group();
+      box(g,.58,3.35,.36,0,0,0);
+      box(g,.38,1.2,.36,-.28,0,0);
+      cone(g,.38,.5,0,3.35,0,brown,4);
+      box(g,.06,.9,.1,0,3.65,0);
+      const xs=[-.2,0,.2];
+      xs.forEach(xx=>verticalDetail(g,xx,.25,.22,2.8,.018,.04));
+      for(let i=0;i<5;i++) {
+        const a=box(g,.7,.025,.04,0,.55+i*.52,.23,darkBrown); a.rotation.z=.55;
+        const b=box(g,.7,.025,.04,0,.55+i*.52,.24,darkBrown); b.rotation.z=-.55;
+      }
+      g.position.x=x; return g;
+    }
+
+    function makeJardine(x) {
+      const g = new THREE.Group();
+      box(g,.72,2.85,.34,0,0,0);
+      box(g,.86,.18,.38,0,2.85,0);
+      for(let i=0;i<6;i++) verticalDetail(g,-.27+i*.11,.25,.2,2.35,.022,.04);
+      for(let i=0;i<4;i++) lineDetail(g,0,3.02+i*.07,.2,.55,.018,.04);
+      g.position.x=x; return g;
+    }
+
+    function makeCentralPlaza(x) {
+      const g = new THREE.Group();
+      box(g,.68,3.0,.34,0,0,0);
+      cone(g,.43,.55,0,3.0,0,brown,4);
+      box(g,.05,.9,.1,0,3.45,0);
+      for(let i=0;i<8;i++) verticalDetail(g,-.22+i*.07,.35,.2,2.1,.018,.04);
+      for(let i=0;i<3;i++) lineDetail(g,0,.55+i*.85,.2,.42,.022,.04);
+      g.position.x=x; return g;
+    }
+
+    function makePagoda(x) {
+      const g = new THREE.Group();
+      for(let i=0;i<7;i++) {
+        const y=i*.32;
+        box(g,.48-i*.03,.24,.34,0,y,0);
+        box(g,.68-i*.04,.045,.42,0,y+.23,0);
+      }
+      cone(g,.26,.25,0,2.22,0,brown,4);
+      box(g,.04,.45,.08,0,2.45,0);
+      for(let i=0;i<6;i++) verticalDetail(g,-.15+i*.06,.1,.2,1.9,.012,.03);
+      g.position.x=x; return g;
+    }
+
+    function makeConvention(x) {
+      const g = new THREE.Group();
+      box(g,.95,.75,.38,0,0,0);
+      const roof = box(g,1.35,.16,.48,0,.75,0);
+      roof.rotation.z = -.08;
+      box(g,.55,.45,.42,-.38,0,0);
+      box(g,.55,.45,.42,.38,0,0);
+      for(let i=0;i<6;i++) lineDetail(g,0,.18+i*.09,.23,.7,.012,.035);
+      g.position.x=x; return g;
+    }
+
+    function makeBuddha(x) {
+      const g = new THREE.Group();
+      box(g,.7,.22,.38,0,0,0);
+      cyl(g,.24,.42,0,.22,0,brown,32);
+      cyl(g,.13,.38,0,.62,0,brown,32);
+      cyl(g,.18,.16,0,1.0,0,brown,32);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(.16,24,16), brown);
+      head.position.set(0,1.22,0); g.add(head);
+      box(g,.07,.4,.1,-.27,.55,0); box(g,.07,.4,.1,.27,.55,0);
+      for(let i=0;i<5;i++) lineDetail(g,0,.08+i*.05,.22,.52,.012,.035);
+      g.position.x=x; return g;
+    }
+
+    function makeTemple(x) {
+      const g = new THREE.Group();
+      box(g,1.55,.72,.42,0,0,0);
+      box(g,1.75,.12,.5,0,.72,0);
+      box(g,.32,.95,.35,-.62,0,0); box(g,.32,.95,.35,.62,0,0);
+      box(g,1.8,.16,.54,0,1.0,0);
+      cone(g,.34,.22,-.62,1.16,0,brown,4); cone(g,.34,.22,.62,1.16,0,brown,4);
+      for(let i=0;i<5;i++) verticalDetail(g,-.55+i*.28,.12,.24,.68,.025,.04);
+      for(let i=0;i<4;i++) lineDetail(g,0,.22+i*.12,.24,1.2,.014,.035);
+      g.position.x=x; return g;
     }
 
     function buildModel() {
       clearGroup(model);
-      const n = +slatCount.value;
-      const hFactor = +waveHeight.value;
-      const d = +depth.value;
-      const logoScale = +logoSize.value;
+      const n = +$('slatCount').value;
+      const backH = +$('backHeight').value;
+      const d = +$('depth').value;
+
       $('slatCountText').textContent = n;
-      $('heightText').textContent = hFactor.toFixed(1);
+      $('backHeightText').textContent = backH.toFixed(1);
       $('depthText').textContent = d.toFixed(2);
-      $('logoText').textContent = logoScale.toFixed(1);
 
-      const width = 8.8, gap = width / n, slatW = gap * .32, baseH = .18;
-      model.add(makeBox(width + .65, baseH, 1.15, 0, 0, 0, matBase));
+      const width = 11.8;
+      const gap = width / n;
+      const baseH = .22;
+      box(model,width+.45,baseH,1.15,0,0,0,brown);
 
-      for (let i=0; i<n; i++) {
+      for (let i=0;i<n;i++) {
         const x = -width/2 + i*gap + gap/2;
-        const h = 4.9 + .25 * Math.sin(i * .08);
-        model.add(makeBox(slatW, h, d*.7, x, baseH, -.18, matLong));
+        const h = backH - i*.006;
+        box(model,gap*.32,h,d*.55,x,baseH,-.28,brown);
       }
 
-      model.add(makeBox(width*.78, .12, .08, 0, 1.55, .12, matDark));
-      model.add(makeBox(width*.68, .10, .08, 0, 1.82, .12, matWaveA));
-      model.add(makeBox(width*.78, .08, .08, 0, 1.25, .12, matWaveB));
-
-      const samples = resample(amplitudes, n);
-      for (let i=0; i<n; i++) {
-        const x = -width/2 + i*gap + gap/2;
-        const amp = THREE.MathUtils.clamp(samples[i], 0, 1);
-        const h = .55 + amp * hFactor;
-        const mat = i % 7 === 0 ? matWaveB : (i % 5 === 0 ? matDark : matWaveA);
-        model.add(makeBox(slatW*1.45, h, d, x, baseH, .12, mat));
-      }
-
-      const logo = createLogo(logoScale);
-      logo.position.set(0, 1.55, .38);
-      model.add(logo);
+      const buildings = [
+        makeIFC(-5.05), makeClockTower(-4.05), makeHSBC(-3.05), makeBankOfChina(-2.05),
+        makeJardine(-1.0), makeCentralPlaza(.02), makePagoda(.92), makeConvention(2.0),
+        makeBuddha(2.9), makeTemple(4.15)
+      ];
+      buildings.forEach(b => { b.position.y = baseH; b.position.z = .2; model.add(b); });
     }
 
-    function drawWave(arr) {
-      const c = $('wave'), ctx = c.getContext('2d');
-      ctx.clearRect(0,0,c.width,c.height);
-      ctx.fillStyle = '#111'; ctx.fillRect(0,0,c.width,c.height);
-      ctx.strokeStyle = '#f8d000'; ctx.lineWidth = 4; ctx.beginPath();
-      arr.forEach((v,i) => {
-        const x = i/(arr.length-1)*c.width;
-        const y = c.height/2 - v*c.height*.42;
-        i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
-      });
-      ctx.stroke();
-    }
+    ['slatCount','backHeight','depth'].forEach(id => $(id).addEventListener('input', buildModel));
 
-    async function decodeAudio(blob) {
-      const arrayBuffer = await blob.arrayBuffer();
-      const ctx = new AudioContext();
-      const buffer = await ctx.decodeAudioData(arrayBuffer);
-      const data = buffer.getChannelData(0);
-      const bins = +slatCount.value;
-      const block = Math.max(1, Math.floor(data.length / bins));
-      const values = [];
-      for (let i=0; i<bins; i++) {
-        let sum = 0;
-        for (let j=0; j<block; j++) sum += Math.abs(data[i*block+j] || 0);
-        values.push(sum / block);
-      }
-      const max = Math.max(...values) || 1;
-      amplitudes = values.map(v => Math.pow(v / max, .65));
-      drawWave(amplitudes);
-      buildModel();
-      await ctx.close();
-    }
-
-    function drawLiveWave() {
-      if (!liveAnalyser || !liveData) return;
-      liveAnalyser.getByteTimeDomainData(liveData);
-      const bins = +slatCount.value;
-      const block = Math.max(1, Math.floor(liveData.length / bins));
-      const values = [];
-      for (let i=0; i<bins; i++) {
-        let sum = 0;
-        for (let j=0; j<block; j++) sum += Math.abs((liveData[i*block+j] - 128) / 128);
-        values.push(sum / block);
-      }
-      const max = Math.max(...values) || 1;
-      drawWave(values.map(v => v / max));
-      if (recorder?.state === 'recording') requestAnimationFrame(drawLiveWave);
-    }
-
-    $('recordBtn').addEventListener('click', async () => {
-      try {
-        if (!window.MediaRecorder || !navigator.mediaDevices?.getUserMedia) {
-          setStatus('Recording is not supported in this browser. Use Chrome, Edge, or Safari on HTTPS/localhost.');
-          return;
-        }
-        recordingStream = await navigator.mediaDevices.getUserMedia({ audio:true });
-        const audioCtx = new AudioContext();
-        const source = audioCtx.createMediaStreamSource(recordingStream);
-        liveAnalyser = audioCtx.createAnalyser();
-        liveAnalyser.fftSize = 1024;
-        liveData = new Uint8Array(liveAnalyser.frequencyBinCount);
-        source.connect(liveAnalyser);
-
-        chunks = [];
-        recorder = new MediaRecorder(recordingStream);
-        recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-        recorder.onstop = async () => {
-          const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
-          audioURL = URL.createObjectURL(blob);
-          $('playBtn').disabled = false;
-          setStatus('Recording complete. Waveform converted to 3D slats.');
-          await decodeAudio(blob);
-          recordingStream?.getTracks().forEach(t => t.stop());
-          await audioCtx.close();
-        };
-        recorder.start();
-        $('recordBtn').disabled = true;
-        $('stopBtn').disabled = false;
-        setStatus('Recording… speak now.');
-        drawLiveWave();
-      } catch (err) {
-        setStatus('Microphone permission failed. On GitHub Pages, make sure the site is opened with HTTPS.');
-        console.error(err);
-      }
-    });
-
-    $('stopBtn').addEventListener('click', () => {
-      if (recorder?.state === 'recording') recorder.stop();
-      $('recordBtn').disabled = false;
-      $('stopBtn').disabled = true;
-    });
-
-    $('playBtn').addEventListener('click', () => audioURL && new Audio(audioURL).play());
-
-    [slatCount, waveHeight, depth, logoSize].forEach(el => el.addEventListener('input', () => {
-      amplitudes = resample(amplitudes, +slatCount.value);
-      drawWave(amplitudes);
-      buildModel();
-    }));
-
-    $('exportBtn').addEventListener('click', () => {
+    $('exportBtn').onclick = () => {
       const exporter = new STLExporter();
       const stl = exporter.parse(model, { binary:false });
-      const blob = new Blob([stl], { type:'model/stl' });
+      const blob = new Blob([stl], {type:'model/stl'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'voice-wave-souvenir.stl';
+      a.download = 'hong-kong-skyline-souvenir.stl';
       a.click();
       URL.revokeObjectURL(a.href);
-    });
+    };
 
-    function resize() {
-      const w = viewer.clientWidth, h = viewer.clientHeight;
-      camera.aspect = w / h;
+    function resize(){
+      camera.aspect = viewer.clientWidth/viewer.clientHeight;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      renderer.setSize(viewer.clientWidth, viewer.clientHeight);
     }
-
-    function animate() {
+    function animate(){
       controls.update();
-      renderer.render(scene, camera);
+      renderer.render(scene,camera);
       requestAnimationFrame(animate);
     }
 
-    addEventListener('resize', resize);
-    drawWave(amplitudes);
+    window.addEventListener('resize', resize);
     buildModel();
     resize();
     animate();
   </script>
 </body>
 </html>
-
