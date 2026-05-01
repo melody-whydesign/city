@@ -3,355 +3,722 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hong Kong Skyline Souvenir</title>
+  <title>Hong Kong Landmark Souvenir Generator</title>
   <style>
     :root {
-      --bg:#f5f5f7;
-      --ink:#1d1d1f;
-      --muted:#6e6e73;
-      --card:rgba(255,255,255,.78);
-      --line:rgba(0,0,0,.08);
-      --accent:#f8d000;
+      --bg: #ffffff;
+      --panel: #ffffff;
+      --ink: #1d1d1f;
+      --muted: #6e6e73;
+      --accent: #f8d000;
+      --line: #e5e5e7;
     }
-    * { box-sizing:border-box; }
-    html, body { width:100%; height:100%; overflow:hidden; }
+    * { box-sizing: border-box; }
     body {
-      margin:0;
-      font-family:-apple-system, BlinkMacSystemFont, "SF Pro Display", Segoe UI, sans-serif;
-      background:linear-gradient(180deg, #fff 0%, var(--bg) 100%);
-      color:var(--ink);
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
     }
-    .app {
-      width:100vw;
-      height:100vh;
-      display:grid;
-      grid-template-columns:320px 1fr;
-      gap:18px;
-      padding:18px;
+    header {
+      padding: 28px clamp(16px, 4vw, 44px) 12px;
+      display: grid;
+      gap: 8px;
     }
-    aside, #viewer {
-      border:1px solid var(--line);
-      background:var(--card);
-      backdrop-filter:blur(24px);
-      border-radius:28px;
-      overflow:hidden;
+    h1 { margin: 0; font-size: clamp(28px, 4vw, 48px); font-weight: 600; letter-spacing: -0.02em; }
+    p { margin: 0; color: var(--muted); line-height: 1.6; max-width: 820px; font-size: 15px; }
+    main {
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      gap: 18px;
+      padding: 16px clamp(16px, 4vw, 44px) 36px;
+      min-height: calc(100vh - 120px);
     }
-    aside { display:flex; flex-direction:column; padding:24px; }
-    h1 { font-size:32px; line-height:1; margin:0 0 12px; letter-spacing:-.04em; }
-    p { color:var(--muted); line-height:1.45; }
-    label { font-size:13px; margin-top:16px; display:flex; justify-content:space-between; font-weight:700; }
-    label span { color:var(--muted); }
-    input[type="range"] { width:100%; accent-color:var(--accent); }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    .controls { padding: 18px; display: grid; gap: 14px; align-content: start; }
+    .viewer { position: relative; min-height: 620px; overflow: hidden; }
+    #scene { width: 100%; height: 100%; min-height: 620px; display: block; }
+    .row { display: grid; gap: 8px; }
+    .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .threecol { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    label { font-size: 13px; font-weight: 700; color: #1d1d1f; }
+    input[type="range"] { width: 100%; }
     button {
-      margin-top:auto;
-      padding:14px;
-      border-radius:14px;
-      border:none;
-      background:var(--accent);
-      font-weight:bold;
-      cursor:pointer;
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: var(--accent);
+      color: #000;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s ease;
     }
-    #viewer { position:relative; }
-    .hint {
-      position:absolute;
-      right:18px;
-      top:18px;
-      padding:10px 14px;
-      border-radius:999px;
-      background:rgba(255,255,255,.72);
-      border:1px solid var(--line);
-      font-size:13px;
-      color:var(--muted);
-      font-weight:700;
-      z-index:2;
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    button.secondary { background: #f2f2f2; color: #000; }
+    button.export { background: var(--accent); color:#000; }
+    .status {
+      padding: 12px;
+      border-radius: 12px;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      font-size: 13px;
+      line-height: 1.4;
     }
-    @media (max-width:860px) {
-      html, body { overflow:auto; }
-      .app { height:auto; min-height:100vh; grid-template-columns:1fr; }
-      #viewer { height:60vh; min-height:420px; }
+    .hint { font-size: 12px; color: var(--muted); }
+    .badge {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      background: rgba(255, 255, 255, .85);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 9px 12px;
+      color: #6e6e73;
+      font-size: 12px;
+      backdrop-filter: blur(10px);
+    }
+    .waveWrap {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px;
+      background: #fff;
+    }
+    #waveCanvas {
+      width: 100%;
+      height: 108px;
+      display: block;
+      border-radius: 10px;
+      background: #f5f5f7;
+      cursor: not-allowed;
+      touch-action: none;
+    }
+    .cropLabels { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+    @media (max-width: 980px) {
+      main { grid-template-columns: 1fr; }
+      .viewer, #scene { min-height: 520px; }
     }
   </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body>
-  <main class="app">
-    <aside>
-      <h1>Hong Kong Skyline Souvenir</h1>
-      <p>The front row is now a simplified 3D-printable Hong Kong landmark skyline, using one dark brown material only.</p>
+  <header>
+    <h1>Hong Kong Landmark Souvenir Generator</h1>
+    <p>Preview a one-colour 3D-printable Hong Kong landmark souvenir. The audio side menu is kept for the future, but the souvenir now uses a fixed skyline made from recognisable Hong Kong landmark forms and raised detail patterns.</p>
+  </header>
 
-      <label>Background slats <span id="slatCountText">82</span></label>
-      <input id="slatCount" type="range" min="45" max="130" value="82" />
+  <main>
+    <section class="panel controls">
+      <div class="row">
+        <label>1. Record voice</label>
+        <div class="threecol">
+          <button id="recordBtn">Record</button>
+          <button id="stopBtn" class="secondary" disabled>Stop</button>
+          <button id="playBtn" class="secondary" disabled>Play</button>
+        </div>
+        <div id="status" class="status">Record your voice, crop the waveform, and the repeated vertical bars will become your soundwave while the Hong Kong landmarks stay recognisable.</div>
+      </div>
 
-      <label>Slat height <span id="backHeightText">5.2</span></label>
-      <input id="backHeight" type="range" min="3.5" max="7" step="0.1" value="5.2" />
+      <div class="row">
+        <label>2. Select soundwave section</label>
+        <div class="waveWrap">
+          <canvas id="waveCanvas" width="720" height="216"></canvas>
+          <div class="cropLabels" style="margin-top:10px"><span>Crop start: <b id="cropStartVal">0.00s</b></span><span>Crop end: <b id="cropEndVal">0.00s</b></span></div>
+          <input id="cropStart" type="hidden" value="0" />
+          <input id="cropEnd" type="hidden" value="1000" />
+        </div>
+        <div class="hint">After recording, drag directly on the waveform to crop the part used for the 3D soundwave bars. Click inside the selected area to choose replay start.</div>
+      </div>
 
-      <label>Model depth <span id="depthText">0.28</span></label>
-      <input id="depth" type="range" min="0.12" max="0.7" step="0.01" value="0.28" />
+      <div class="twocol">
+        <div class="row">
+          <label for="landmarkScale">Landmark height: <span id="landmarkScaleVal">1.00</span></label>
+          <input id="landmarkScale" type="range" min="0.75" max="1.35" value="1" step="0.05" />
+        </div>
+        <div class="row">
+          <label for="detailDepth">Detail depth: <span id="detailDepthVal">1.00</span></label>
+          <input id="detailDepth" type="range" min="0.5" max="1.8" value="1" step="0.05" />
+        </div>
+      </div>
 
-      <button id="exportBtn">Export STL</button>
-    </aside>
+      <div class="row">
+        <label for="baseDepth">Print depth: <span id="baseDepthVal">0.35</span></label>
+        <input id="baseDepth" type="range" min="0.18" max="0.8" value="0.35" step="0.01" />
+      </div>
 
-    <section id="viewer"><div class="hint">Drag to rotate · Scroll to zoom</div></section>
+      <div class="twocol">
+        <button id="frontBtn" class="secondary">Front View</button>
+        <button id="exportBtn" class="export">Export STL</button>
+      </div>
+
+      <div class="hint">Everything is one dark-brown material, suitable for single-colour 3D printing. Details are created as raised/stepped geometry, not colours.</div>
+    </section>
+
+    <section class="panel viewer">
+      <canvas id="scene"></canvas>
+      <div class="badge">Default front view · Drag to rotate · Scroll to zoom</div>
+    </section>
   </main>
 
   <script type="module">
-    import * as THREE from 'https://esm.sh/three@0.160.0';
-    import { OrbitControls } from 'https://esm.sh/three@0.160.0/examples/jsm/controls/OrbitControls.js';
-    import { STLExporter } from 'https://esm.sh/three@0.160.0/examples/jsm/exporters/STLExporter.js';
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 
-    const viewer = document.getElementById('viewer');
+    const canvas = document.querySelector('#scene');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f5f7);
+    scene.background = new THREE.Color(0xfaf7f1);
 
-    const camera = new THREE.PerspectiveCamera(42, viewer.clientWidth / viewer.clientHeight, 0.1, 100);
-    // Set straight front orthographic-like perspective
-    camera.position.set(0, 1.6, 11);
-    camera.lookAt(0, 1.6, 0);
-
-    const renderer = new THREE.WebGLRenderer({ antialias:true });
-    renderer.setSize(viewer.clientWidth, viewer.clientHeight);
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    viewer.appendChild(renderer.domElement);
-
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.minPolarAngle = Math.PI / 2;
-    controls.maxPolarAngle = Math.PI / 2;
-    controls.autoRotate = false;
-    controls.target.set(0, 1.6, 0);
-    controls.update();
+    controls.target.set(0, 3.05, 0);
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x777777, 2.8));
-    const key = new THREE.DirectionalLight(0xffffff, 2.1);
-    key.position.set(3, 6, 5);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x664433, 2.2));
+    const key = new THREE.DirectionalLight(0xffffff, 2.0);
+    key.position.set(3, 7, 6);
     scene.add(key);
 
-    const model = new THREE.Group();
-    scene.add(model);
+    const root = new THREE.Group();
+    scene.add(root);
 
-    const brown = new THREE.MeshStandardMaterial({ color:0x6b472f, roughness:.72 });
-    const darkBrown = new THREE.MeshStandardMaterial({ color:0x5a3926, roughness:.78 });
+    const darkBrown = 0x3a2018;
+    const mat = new THREE.MeshStandardMaterial({ color: darkBrown, roughness: 0.76, metalness: 0.02 });
 
-    const $ = id => document.getElementById(id);
+    let hasRecording = false;
+    let rawSamples = [];
+    let duration = 0;
+    let waveformBars = [];
+    let playStartSeconds = 0;
+    let recorder = null;
+    let chunks = [];
+    let liveStream = null;
+    let recordedAudioUrl = null;
+    const player = new Audio();
 
-    function clearGroup(g) {
-      while (g.children.length) {
-        const o = g.children.pop();
-        o.geometry?.dispose?.();
-        o.material?.dispose?.();
+    const ui = {
+      recordBtn: document.querySelector('#recordBtn'),
+      stopBtn: document.querySelector('#stopBtn'),
+      playBtn: document.querySelector('#playBtn'),
+      waveCanvas: document.querySelector('#waveCanvas'),
+      cropStart: document.querySelector('#cropStart'),
+      cropEnd: document.querySelector('#cropEnd'),
+      cropStartVal: document.querySelector('#cropStartVal'),
+      cropEndVal: document.querySelector('#cropEndVal'),
+      landmarkScale: document.querySelector('#landmarkScale'),
+      detailDepth: document.querySelector('#detailDepth'),
+      baseDepth: document.querySelector('#baseDepth'),
+      landmarkScaleVal: document.querySelector('#landmarkScaleVal'),
+      detailDepthVal: document.querySelector('#detailDepthVal'),
+      baseDepthVal: document.querySelector('#baseDepthVal'),
+      frontBtn: document.querySelector('#frontBtn'),
+      exportBtn: document.querySelector('#exportBtn'),
+      status: document.querySelector('#status')
+    };
+
+    window.addEventListener('error', (event) => {
+      ui.status.textContent = 'Preview error: ' + event.message;
+    });
+
+    function updateLabels() {
+      ui.landmarkScaleVal.textContent = Number(ui.landmarkScale.value).toFixed(2);
+      ui.detailDepthVal.textContent = Number(ui.detailDepth.value).toFixed(2);
+      ui.baseDepthVal.textContent = Number(ui.baseDepth.value).toFixed(2);
+      ui.cropStartVal.textContent = `${cropStartSeconds().toFixed(2)}s`;
+      ui.cropEndVal.textContent = `${cropEndSeconds().toFixed(2)}s`; 
+    }
+
+    function cropStartSeconds() {
+      return duration * Number(ui.cropStart.value) / 1000;
+    }
+
+    function cropEndSeconds() {
+      return duration * Number(ui.cropEnd.value) / 1000;
+    }
+
+    function clearGroup(group) {
+      while (group.children.length) {
+        const child = group.children.pop();
+        child.traverse?.((obj) => { if (obj.geometry) obj.geometry.dispose(); });
       }
     }
 
-    function box(g, w, h, d, x, y, z, mat=brown) {
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-      mesh.position.set(x, y + h / 2, z);
-      g.add(mesh);
+    function box(w, h, d, x, y, z, name = '') {
+      const geo = new THREE.BoxGeometry(w, h, d);
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, y, z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.name = name;
       return mesh;
     }
 
-    function cyl(g, r, h, x, y, z, mat=brown, sides=32) {
-      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, sides), mat);
-      mesh.position.set(x, y + h / 2, z);
-      g.add(mesh);
-      return mesh;
+    function setFrontView() {
+      camera.position.set(0, 3.05, 13.2);
+      controls.target.set(0, 3.05, 0);
+      controls.update();
     }
 
-    function cone(g, r, h, x, y, z, mat=brown, sides=4) {
-      const mesh = new THREE.Mesh(new THREE.ConeGeometry(r, h, sides), mat);
-      mesh.position.set(x, y + h / 2, z);
-      mesh.rotation.y = Math.PI / 4;
-      g.add(mesh);
-      return mesh;
+    function addDetail(group, w, h, x, y, depth, name = 'raised_detail') {
+      const detailScale = Number(ui.detailDepth.value);
+      group.add(box(w, h, depth * 0.28 * detailScale, x, y, depth * 1.06, name));
     }
 
-    function lineDetail(g, x, y, z, w, h=.025, d=.035) { box(g, w, h, d, x, y, z, darkBrown); }
-    function verticalDetail(g, x, y, z, h, w=.025, d=.035) { box(g, w, h, d, x, y, z, darkBrown); }
-
-    function makeIFC(x) {
-      const g = new THREE.Group();
-      box(g,.55,4.1,.34,0,0,0);
-      box(g,.75,.22,.42,0,0,0);
-      cone(g,.36,.45,0,4.1,0,brown,4);
-      for(let i=0;i<14;i++) lineDetail(g,0,.45+i*.22,.19,.34,.012,.04);
-      for(let i=0;i<18;i++) verticalDetail(g,-.18+(i%3)*.18,.65+i*.16,.2,.04,.018,.04);
-      g.position.x=x; return g;
+    function addSpire(group, x, y, h, depth, name) {
+      group.add(box(0.045, h, depth * 0.75, x, y + h / 2, depth * 0.58, name));
     }
 
-    function makeClockTower(x) {
-      const g = new THREE.Group();
-      box(g,.38,2.45,.34,0,0,0);
-      box(g,.55,.12,.4,0,0,0);
-      cyl(g,.2,.24,0,2.45,0,brown,24);
-      cone(g,.2,.28,0,2.69,0,brown,24);
-      box(g,.07,.75,.12,0,2.95,0);
-      cyl(g,.09,.035,0,1.15,.2,darkBrown,24);
-      for(let i=0;i<5;i++) lineDetail(g,0,.35+i*.25,.2,.24,.015,.04);
-      g.position.x=x; return g;
+    function addLandmarkLabel(group, textBlocks, x, y, w, depth) {
+      // Abstract tiny block lettering/glyphs for recognisability while remaining STL-safe.
+      const gap = w * 0.08;
+      const blockW = w * 0.09;
+      const blockH = 0.055;
+      const total = textBlocks.length * blockW + (textBlocks.length - 1) * gap;
+      let start = x - total / 2 + blockW / 2;
+      textBlocks.forEach((_, i) => addDetail(group, blockW, blockH, start + i * (blockW + gap), y, depth, 'landmark_micro_mark'));
     }
 
-    function makeHSBC(x) {
-      const g = new THREE.Group();
-      box(g,.85,2.75,.34,0,0,0);
-      box(g,1.02,.08,.42,0,2.75,0);
-      for(let i=0;i<8;i++) lineDetail(g,0,.35+i*.28,.2,.72,.018,.04);
-      for(let i=0;i<5;i++) verticalDetail(g,-.42+i*.21,.2,.2,2.4,.018,.04);
-      for(let i=0;i<6;i++) {
-        const brace = box(g,.72,.025,.04,0,.55+i*.36,.22,darkBrown);
-        brace.rotation.z = i%2 ? .22 : -.22;
-      }
-      g.position.x=x; return g;
+    function addLegCo(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 1.25, h * 0.58, d, x, baseY + h * 0.29, depth * 0.35, 'legco_body'));
+      group.add(box(w * 1.55, h * 0.09, d, x, baseY + h * 0.63, depth * 0.35, 'legco_roof_band'));
+      group.add(box(w * 0.78, h * 0.12, d, x, baseY + h * 0.73, depth * 0.35, 'legco_pediment'));
+      group.add(box(w * 0.22, h * 0.12, d, x, baseY + h * 0.86, depth * 0.35, 'legco_center_crown'));
+      for (let i = -3; i <= 3; i++) addDetail(group, w * 0.035, h * 0.38, x + i * w * 0.16, baseY + h * 0.31, depth, 'legco_columns');
+      addLandmarkLabel(group, ['L','C'], x, baseY + h * 0.13, w, depth);
     }
 
-    function makeBankOfChina(x) {
-      const g = new THREE.Group();
-      box(g,.58,3.35,.36,0,0,0);
-      box(g,.38,1.2,.36,-.28,0,0);
-      cone(g,.38,.5,0,3.35,0,brown,4);
-      box(g,.06,.9,.1,0,3.65,0);
-      const xs=[-.2,0,.2];
-      xs.forEach(xx=>verticalDetail(g,xx,.25,.22,2.8,.018,.04));
-      for(let i=0;i<5;i++) {
-        const a=box(g,.7,.025,.04,0,.55+i*.52,.23,darkBrown); a.rotation.z=.55;
-        const b=box(g,.7,.025,.04,0,.55+i*.52,.24,darkBrown); b.rotation.z=-.55;
-      }
-      g.position.x=x; return g;
+    function addIFC(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 0.65, h * 0.9, d, x, baseY + h * 0.45, depth * 0.35, 'ifc_tall_body'));
+      group.add(box(w * 0.48, h * 0.08, d, x, baseY + h * 0.94, depth * 0.35, 'ifc_cap'));
+      addSpire(group, x, baseY + h * 0.96, h * 0.13, depth, 'ifc_spire');
+      for (let i = -2; i <= 2; i++) addDetail(group, w * 0.025, h * 0.72, x + i * w * 0.1, baseY + h * 0.48, depth, 'ifc_vertical_ribs');
+      for (let i = 1; i <= 5; i++) addDetail(group, w * 0.52, 0.035, x, baseY + h * (0.18 + i * 0.12), depth, 'ifc_floor_lines');
     }
 
-    function makeJardine(x) {
-      const g = new THREE.Group();
-      box(g,.72,2.85,.34,0,0,0);
-      box(g,.86,.18,.38,0,2.85,0);
-      for(let i=0;i<6;i++) verticalDetail(g,-.27+i*.11,.25,.2,2.35,.022,.04);
-      for(let i=0;i<4;i++) lineDetail(g,0,3.02+i*.07,.2,.55,.018,.04);
-      g.position.x=x; return g;
+    function addICC(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 0.8, h * 0.82, d, x, baseY + h * 0.41, depth * 0.35, 'icc_main_tower'));
+      group.add(box(w * 0.58, h * 0.13, d, x, baseY + h * 0.88, depth * 0.35, 'icc_upper_step'));
+      group.add(box(w * 0.36, h * 0.06, d, x, baseY + h * 0.99, depth * 0.35, 'icc_top'));
+      for (let i = -3; i <= 3; i++) addDetail(group, w * 0.022, h * 0.72, x + i * w * 0.085, baseY + h * 0.44, depth, 'icc_ribs');
+      addDetail(group, w * 0.68, 0.04, x, baseY + h * 0.77, depth, 'icc_sky_lobby_band');
     }
 
-    function makeCentralPlaza(x) {
-      const g = new THREE.Group();
-      box(g,.68,3.0,.34,0,0,0);
-      cone(g,.43,.55,0,3.0,0,brown,4);
-      box(g,.05,.9,.1,0,3.45,0);
-      for(let i=0;i<8;i++) verticalDetail(g,-.22+i*.07,.35,.2,2.1,.018,.04);
-      for(let i=0;i<3;i++) lineDetail(g,0,.55+i*.85,.2,.42,.022,.04);
-      g.position.x=x; return g;
+    function addBOC(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 1.05, h * 0.28, d, x, baseY + h * 0.14, depth * 0.35, 'boc_lower'));
+      group.add(box(w * 0.82, h * 0.28, d, x, baseY + h * 0.42, depth * 0.35, 'boc_middle'));
+      group.add(box(w * 0.58, h * 0.26, d, x, baseY + h * 0.69, depth * 0.35, 'boc_upper'));
+      group.add(box(w * 0.25, h * 0.18, d, x, baseY + h * 0.91, depth * 0.35, 'boc_tip'));
+      // Raised diagonal X pattern using thin rotated bars.
+      const diag1 = box(w * 1.05, 0.045, depth * 0.28 * Number(ui.detailDepth.value), x, baseY + h * 0.48, depth * 1.07, 'boc_diagonal_a');
+      diag1.rotation.z = Math.PI / 4;
+      const diag2 = box(w * 1.05, 0.045, depth * 0.28 * Number(ui.detailDepth.value), x, baseY + h * 0.48, depth * 1.08, 'boc_diagonal_b');
+      diag2.rotation.z = -Math.PI / 4;
+      group.add(diag1, diag2);
     }
 
-    function makePagoda(x) {
-      const g = new THREE.Group();
-      for(let i=0;i<7;i++) {
-        const y=i*.32;
-        box(g,.48-i*.03,.24,.34,0,y,0);
-        box(g,.68-i*.04,.045,.42,0,y+.23,0);
-      }
-      cone(g,.26,.25,0,2.22,0,brown,4);
-      box(g,.04,.45,.08,0,2.45,0);
-      for(let i=0;i<6;i++) verticalDetail(g,-.15+i*.06,.1,.2,1.9,.012,.03);
-      g.position.x=x; return g;
+    function addHSBC(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 1.28, h * 0.72, d, x, baseY + h * 0.36, depth * 0.35, 'hsbc_frame'));
+      group.add(box(w * 1.5, h * 0.11, d, x, baseY + h * 0.79, depth * 0.35, 'hsbc_top_truss'));
+      group.add(box(w * 1.42, h * 0.11, d, x, baseY + h * 0.08, depth * 0.35, 'hsbc_base_truss'));
+      for (let i = -2; i <= 2; i++) addDetail(group, w * 0.055, h * 0.62, x + i * w * 0.22, baseY + h * 0.38, depth, 'hsbc_vertical_structure');
+      for (let i = 1; i <= 4; i++) addDetail(group, w * 1.18, 0.04, x, baseY + h * (0.15 + i * 0.13), depth, 'hsbc_horizontal_structure');
     }
 
-    function makeConvention(x) {
-      const g = new THREE.Group();
-      box(g,.95,.75,.38,0,0,0);
-      const roof = box(g,1.35,.16,.48,0,.75,0);
-      roof.rotation.z = -.08;
-      box(g,.55,.45,.42,-.38,0,0);
-      box(g,.55,.45,.42,.38,0,0);
-      for(let i=0;i<6;i++) lineDetail(g,0,.18+i*.09,.23,.7,.012,.035);
-      g.position.x=x; return g;
+    function addCentralPlaza(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 0.9, h * 0.78, d, x, baseY + h * 0.39, depth * 0.35, 'central_plaza_body'));
+      group.add(box(w * 0.48, h * 0.08, d, x, baseY + h * 0.84, depth * 0.35, 'central_plaza_cap'));
+      addSpire(group, x, baseY + h * 0.86, h * 0.2, depth, 'central_plaza_spire');
+      for (let i = 1; i <= 6; i++) addDetail(group, w * 0.72, 0.032, x, baseY + h * (0.13 + i * 0.1), depth, 'central_plaza_floor_lines');
     }
 
-    function makeBuddha(x) {
-      const g = new THREE.Group();
-      box(g,.7,.22,.38,0,0,0);
-      cyl(g,.24,.42,0,.22,0,brown,32);
-      cyl(g,.13,.38,0,.62,0,brown,32);
-      cyl(g,.18,.16,0,1.0,0,brown,32);
-      const head = new THREE.Mesh(new THREE.SphereGeometry(.16,24,16), brown);
-      head.position.set(0,1.22,0); g.add(head);
-      box(g,.07,.4,.1,-.27,.55,0); box(g,.07,.4,.1,.27,.55,0);
-      for(let i=0;i<5;i++) lineDetail(g,0,.08+i*.05,.22,.52,.012,.035);
-      g.position.x=x; return g;
-    }
-
-    function makeTemple(x) {
-      const g = new THREE.Group();
-      box(g,1.55,.72,.42,0,0,0);
-      box(g,1.75,.12,.5,0,.72,0);
-      box(g,.32,.95,.35,-.62,0,0); box(g,.32,.95,.35,.62,0,0);
-      box(g,1.8,.16,.54,0,1.0,0);
-      cone(g,.34,.22,-.62,1.16,0,brown,4); cone(g,.34,.22,.62,1.16,0,brown,4);
-      for(let i=0;i<5;i++) verticalDetail(g,-.55+i*.28,.12,.24,.68,.025,.04);
-      for(let i=0;i<4;i++) lineDetail(g,0,.22+i*.12,.24,1.2,.014,.035);
-      g.position.x=x; return g;
+    function addJunkBoat(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 1.45, h * 0.16, d, x, baseY + h * 0.12, depth * 0.35, 'junk_boat_hull'));
+      group.add(box(w * 0.08, h * 0.65, d, x, baseY + h * 0.45, depth * 0.35, 'junk_boat_mast'));
+      const sailA = box(w * 0.58, h * 0.08, d, x - w * 0.22, baseY + h * 0.55, depth * 0.35, 'junk_boat_sail_a');
+      sailA.rotation.z = -0.55;
+      const sailB = box(w * 0.52, h * 0.08, d, x + w * 0.23, baseY + h * 0.48, depth * 0.35, 'junk_boat_sail_b');
+      sailB.rotation.z = 0.55;
+      group.add(sailA, sailB);
+      addDetail(group, w * 1.35, 0.035, x, baseY + h * 0.22, depth, 'junk_boat_deck_line');
     }
 
     function buildModel() {
-      clearGroup(model);
-      const n = +$('slatCount').value;
-      const backH = +$('backHeight').value;
-      const d = +$('depth').value;
+      updateLabels();
+      clearGroup(root);
 
-      $('slatCountText').textContent = n;
-      $('backHeightText').textContent = backH.toFixed(1);
-      $('depthText').textContent = d.toFixed(2);
+      const width = 9.4;
+      const maxH = 5.8;
+      const depth = Number(ui.baseDepth.value);
+      const landmarkScale = Number(ui.landmarkScale.value);
 
-      const width = 11.8;
-      const gap = width / n;
-      const baseH = .22;
-      box(model,width+.45,baseH,1.15,0,0,0,brown);
+      root.add(box(width + 0.55, maxH + 0.55, depth * 0.42, 0, (maxH + 0.55) / 2, -depth * 0.35, 'solid_back_plate'));
+      root.add(box(width + 0.85, 0.28, depth * 1.8, 0, 0.14, depth * 0.12, 'bottom_foot'));
 
-      for (let i=0;i<n;i++) {
-        const x = -width/2 + i*gap + gap/2;
-        const h = backH - i*.006;
-        box(model,gap*.32,h,d*.55,x,baseH,-.28,brown);
+      // Repeated facade rhythm. After recording, these become personal soundwave bars.
+      const rhythmCount = 58;
+      const rhythmSpacing = width / rhythmCount;
+      const rhythmW = rhythmSpacing * 0.34;
+      const values = hasRecording && waveformBars.length ? resample(waveformBars, rhythmCount) : null;
+      for (let i = 0; i < rhythmCount + 4; i++) {
+        const x = -width / 2 - rhythmSpacing * 2 + i * rhythmSpacing;
+        const v = values ? values[Math.max(0, Math.min(rhythmCount - 1, i - 2))] : 1;
+        const barH = values ? 1.0 + v * 4.9 : maxH + 0.35;
+        root.add(box(rhythmW, barH, depth * 1.05, x, barH / 2 + 0.18, depth * 0.12, 'soundwave_facade_bar'));
       }
 
-            // Keep only major buildings (removed 3 smaller ones) and distribute evenly
-      const buildingFns = [
-        makeIFC,
-        makeClockTower,
-        makeHSBC,
-        makeBankOfChina,
-        makeJardine,
-        makeCentralPlaza,
-        makeConvention
+      // Fixed Hong Kong landmark sequence.
+      const skyline = [
+        { fn: addLegCo, h: 3.2, w: 1.08 },
+        { fn: addIFC, h: 5.55, w: 0.92 },
+        { fn: addBOC, h: 5.0, w: 1.0 },
+        { fn: addHSBC, h: 3.9, w: 1.15 },
+        { fn: addICC, h: 5.8, w: 0.96 },
+        { fn: addCentralPlaza, h: 4.6, w: 0.94 },
+        { fn: addJunkBoat, h: 2.7, w: 1.12 }
       ];
-
-      const count = buildingFns.length;
-      const spacing = width / (count + 1);
-      const buildings = buildingFns.map((fn, i) => {
-        const x = -width/2 + spacing * (i + 1);
-        return fn(x);
+      const spacing = width / skyline.length;
+      skyline.forEach((item, i) => {
+        const x = -width / 2 + spacing / 2 + i * spacing;
+        item.fn(root, x, item.h * landmarkScale, spacing * item.w * 0.58, depth);
       });
-      buildings.forEach(b => { b.position.y = baseH; b.position.z = .2; model.add(b); });
+
+      // Lower bands inspired by the original souvenir base.
+      for (const y of [1.45, 1.68, 1.92]) {
+        root.add(box(width + 0.35, 0.055, depth * 1.55, 0, y, depth * 0.36, 'horizontal_band'));
+      }
+      root.add(box(width + 0.2, 0.055, depth * 1.52, 0, 1.28, depth * 0.38, 'lower_detail_band'));
+
+      drawWaveCanvas();
     }
 
-    ['slatCount','backHeight','depth'].forEach(id => $(id).addEventListener('input', buildModel));
+    function resample(arr, n) {
+      if (!arr.length) return Array.from({ length: n }, () => 0);
+      const out = [];
+      for (let i = 0; i < n; i++) {
+        const pos = i * (arr.length - 1) / Math.max(1, n - 1);
+        const lo = Math.floor(pos);
+        const hi = Math.min(arr.length - 1, lo + 1);
+        const t = pos - lo;
+        out.push(arr[lo] * (1 - t) + arr[hi] * t);
+      }
+      return out;
+    }
 
-    $('exportBtn').onclick = () => {
-      const exporter = new STLExporter();
-      const stl = exporter.parse(model, { binary:false });
-      const blob = new Blob([stl], {type:'model/stl'});
+    function sampleToBins(samples, count) {
+      const samplesPerBin = Math.max(1, Math.floor(samples.length / count));
+      const values = [];
+      for (let i = 0; i < count; i++) {
+        const start = i * samplesPerBin;
+        const end = i === count - 1 ? samples.length : Math.min(samples.length, start + samplesPerBin);
+        let sum = 0;
+        for (let j = start; j < end; j++) sum += samples[j] * samples[j];
+        values.push(Math.sqrt(sum / Math.max(1, end - start)));
+      }
+      const max = Math.max(...values, 0.00001);
+      return values.map(v => Math.max(0.06, Math.min(1, Math.pow(v / max, 0.68))));
+    }
+
+    function computeWaveFromCrop() {
+      if (!rawSamples.length || !duration) {
+        waveformBars = [];
+        return;
+      }
+      let start = cropStartSeconds();
+      let end = cropEndSeconds();
+      if (end <= start + 0.1) end = Math.min(duration, start + 0.1);
+      const startIndex = Math.floor((start / duration) * rawSamples.length);
+      const endIndex = Math.max(startIndex + 1, Math.floor((end / duration) * rawSamples.length));
+      waveformBars = sampleToBins(rawSamples.slice(startIndex, endIndex), 58);
+    }
+
+    async function decodeAudio(arrayBuffer) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) throw new Error('This browser does not support Web Audio.');
+      const audioCtx = new AudioCtx();
+      const buffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+      duration = buffer.duration;
+      rawSamples = Array.from(buffer.getChannelData(0));
+      await audioCtx.close?.();
+      computeWaveFromCrop();
+    }
+
+    function drawWaveCanvas() {
+      const c = ui.waveCanvas;
+      const ctx = c.getContext('2d');
+      const w = c.width;
+      const h = c.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#f5f5f7';
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = '#d2d2d7';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, h / 2);
+      ctx.lineTo(w, h / 2);
+      ctx.stroke();
+
+      if (!rawSamples.length) {
+        ctx.fillStyle = '#6e6e73';
+        ctx.font = '24px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Record audio to see the waveform', w / 2, h / 2 + 8);
+        return;
+      }
+
+      const bars = Math.min(360, w);
+      const per = Math.max(1, Math.floor(rawSamples.length / bars));
+      ctx.fillStyle = '#3a2018';
+      for (let i = 0; i < bars; i++) {
+        let peak = 0;
+        const start = i * per;
+        const end = Math.min(rawSamples.length, start + per);
+        for (let j = start; j < end; j++) peak = Math.max(peak, Math.abs(rawSamples[j]));
+        const barH = Math.max(2, peak * h * 0.82);
+        const x = i * w / bars;
+        ctx.fillRect(x, h / 2 - barH / 2, Math.max(1, w / bars - 1), barH);
+      }
+
+      const sx = Number(ui.cropStart.value) / 1000 * w;
+      const ex = Number(ui.cropEnd.value) / 1000 * w;
+      ctx.fillStyle = 'rgba(255,255,255,.68)';
+      ctx.fillRect(0, 0, sx, h);
+      ctx.fillRect(ex, 0, w - ex, h);
+      ctx.strokeStyle = '#f8d000';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(sx, 3, Math.max(3, ex - sx), h - 6);
+
+      const px = duration ? (playStartSeconds / duration) * w : sx;
+      ctx.strokeStyle = '#1d1d1f';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(px, 0);
+      ctx.lineTo(px, h);
+      ctx.stroke();
+    }
+
+    function chooseSupportedMimeType() {
+      const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+      return types.find(type => window.MediaRecorder && MediaRecorder.isTypeSupported(type)) || '';
+    }
+
+    async function startRecording() {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error('Microphone recording needs HTTPS and a modern browser.');
+        chunks = [];
+        hasRecording = false;
+        ui.playBtn.disabled = true;
+        ui.playBtn.textContent = 'Play';
+        liveStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = chooseSupportedMimeType();
+        recorder = mimeType ? new MediaRecorder(liveStream, { mimeType }) : new MediaRecorder(liveStream);
+        recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+        recorder.onerror = event => { ui.status.textContent = 'Recording error: ' + (event.error?.message || 'unknown error'); };
+        recorder.onstop = async () => {
+          try {
+            const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+            if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
+            recordedAudioUrl = URL.createObjectURL(blob);
+            player.src = recordedAudioUrl;
+            ui.cropStart.value = 0;
+            ui.cropEnd.value = 1000;
+            playStartSeconds = 0;
+            await decodeAudio(await blob.arrayBuffer());
+            hasRecording = true;
+            ui.playBtn.disabled = false;
+            buildModel();
+            ui.status.textContent = 'Voice captured. Drag the waveform crop area to choose the part used for the souvenir bars.';
+          } catch (err) {
+            ui.status.textContent = 'Recording captured, but waveform decoding failed. Try Chrome or Edge on HTTPS.';
+            console.error(err);
+          } finally {
+            liveStream?.getTracks().forEach(t => t.stop());
+            liveStream = null;
+            ui.recordBtn.disabled = false;
+            ui.stopBtn.disabled = true;
+          }
+        };
+        recorder.start();
+        ui.recordBtn.disabled = true;
+        ui.stopBtn.disabled = false;
+        ui.status.textContent = 'Recording... speak clearly, then click Stop.';
+      } catch (err) {
+        ui.status.textContent = err.message || 'Microphone permission failed.';
+        ui.recordBtn.disabled = false;
+        ui.stopBtn.disabled = true;
+      }
+    }
+
+    function stopRecording() {
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.stop();
+        ui.status.textContent = 'Processing recording...';
+      }
+    }
+
+    function playRecording() {
+      if (!recordedAudioUrl) return;
+      if (!player.paused) {
+        player.pause();
+        ui.playBtn.textContent = 'Play';
+        return;
+      }
+      ui.playBtn.textContent = 'Pause';
+      const start = Math.max(cropStartSeconds(), playStartSeconds);
+      const end = cropEndSeconds();
+      player.currentTime = start;
+      player.play().catch(err => { ui.status.textContent = 'Playback failed: ' + err.message; });
+      const stopTimer = setInterval(() => {
+        if (player.paused || player.currentTime >= end) {
+          player.pause();
+          ui.playBtn.textContent = 'Play';
+          clearInterval(stopTimer);
+        }
+      }, 30);
+    }
+
+    let isDraggingCrop = false;
+    let dragMode = 'move';
+    let dragOffset = 0;
+
+    function pointerRatio(event) {
+      const rect = ui.waveCanvas.getBoundingClientRect();
+      return Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    }
+
+    function setCropFromRatios(start, end) {
+      start = Math.max(0, Math.min(0.98, start));
+      end = Math.max(0.02, Math.min(1, end));
+      if (end - start < 0.02) {
+        if (dragMode === 'start') start = end - 0.02;
+        else end = start + 0.02;
+      }
+      ui.cropStart.value = Math.round(start * 1000);
+      ui.cropEnd.value = Math.round(end * 1000);
+      playStartSeconds = cropStartSeconds();
+      computeWaveFromCrop();
+      buildModel();
+    }
+
+    ui.waveCanvas.addEventListener('pointerdown', (event) => {
+      if (!duration) return;
+      ui.waveCanvas.setPointerCapture(event.pointerId);
+      const r = pointerRatio(event);
+      const s = Number(ui.cropStart.value) / 1000;
+      const e = Number(ui.cropEnd.value) / 1000;
+      const edge = 0.035;
+      isDraggingCrop = true;
+      if (Math.abs(r - s) < edge) dragMode = 'start';
+      else if (Math.abs(r - e) < edge) dragMode = 'end';
+      else if (r > s && r < e) {
+        dragMode = 'move';
+        dragOffset = r - s;
+        playStartSeconds = r * duration;
+        drawWaveCanvas();
+      } else {
+        dragMode = 'end';
+        setCropFromRatios(Math.min(s, r), Math.max(s, r));
+      }
+    });
+
+    ui.waveCanvas.addEventListener('pointermove', (event) => {
+      if (!isDraggingCrop || !duration) return;
+      const r = pointerRatio(event);
+      const s = Number(ui.cropStart.value) / 1000;
+      const e = Number(ui.cropEnd.value) / 1000;
+      const len = e - s;
+      if (dragMode === 'start') setCropFromRatios(r, e);
+      else if (dragMode === 'end') setCropFromRatios(s, r);
+      else {
+        const ns = Math.max(0, Math.min(1 - len, r - dragOffset));
+        setCropFromRatios(ns, ns + len);
+      }
+    });
+
+    ui.waveCanvas.addEventListener('pointerup', (event) => {
+      isDraggingCrop = false;
+      try { ui.waveCanvas.releasePointerCapture(event.pointerId); } catch (e) {}
+    });
+
+    function download(filename, text) {
+      const blob = new Blob([text], { type: 'model/stl' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'hong-kong-skyline-souvenir.stl';
+      a.download = filename;
+      document.body.appendChild(a);
       a.click();
+      a.remove();
       URL.revokeObjectURL(a.href);
-    };
-
-    function resize(){
-      camera.aspect = viewer.clientWidth/viewer.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(viewer.clientWidth, viewer.clientHeight);
     }
-    function animate(){
-      controls.update();
-      renderer.render(scene,camera);
-      requestAnimationFrame(animate);
+
+    function exportSTL() {
+      const exporter = new STLExporter();
+      const stl = exporter.parse(root, { binary: false });
+      download('hong-kong-landmark-souvenir.stl', stl);
+      ui.status.textContent = 'STL exported. Open it in your slicer and print in one dark-brown material.';
+    }
+
+    ui.recordBtn.addEventListener('click', startRecording);
+    ui.stopBtn.addEventListener('click', stopRecording);
+    ui.playBtn.addEventListener('click', playRecording);
+    ui.frontBtn.addEventListener('click', setFrontView);
+    ui.exportBtn.addEventListener('click', exportSTL);
+    for (const el of [ui.landmarkScale, ui.detailDepth, ui.baseDepth]) {
+      el.addEventListener('input', buildModel);
+    }
+
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const width = Math.max(320, rect.width);
+      const height = Math.max(420, rect.height);
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
     }
 
     window.addEventListener('resize', resize);
     buildModel();
     resize();
+    setFrontView();
+
+    function animate() {
+      controls.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
     animate();
   </script>
 </body>
