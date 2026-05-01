@@ -293,13 +293,7 @@
       }
 
       // simple raised identity marks, still single colour
-      if (style === 2) {
-        const diagA = box(totalW * 0.8, 0.045, depth * 0.5, cx, h * 0.48, depth * 1.05, 'boc_diagonal_a');
-        diagA.rotation.z = Math.PI / 4;
-        const diagB = box(totalW * 0.8, 0.045, depth * 0.5, cx, h * 0.48, depth * 1.06, 'boc_diagonal_b');
-        diagB.rotation.z = -Math.PI / 4;
-        group.add(diagA, diagB);
-      }
+      
       if (style === 3) {
         for (let y = 0.9; y < h * 0.78; y += 0.45) group.add(box(totalW * 0.9, 0.04, depth * 0.5, cx, y, depth * 1.05, 'hsbc_floor_line'));
       }
