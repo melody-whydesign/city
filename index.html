@@ -401,27 +401,39 @@
         root.add(box(rhythmW, barH, depth * 1.05 * barDepthScale, x, barH / 2, 0, 'soundwave_bar'));
       }
 
-      // Lower bands (base)
-      for (const y of [1.45, 1.68, 1.92]) {
-        root.add(box(width + 0.35, 0.055, depth * 1.55, 0, y, depth * 0.36, 'horizontal_band'));
-      }
-      root.add(box(width + 0.2, 0.055, depth * 1.52, 0, 1.28, depth * 0.38, 'lower_detail_band'));
+      
 
-      // Fixed Hong Kong landmark sequence.
+      // Fixed Hong Kong landmark sequence (built from bars)
       const skyline = [
-        { fn: addLegCo, h: 3.2, w: 1.08 },
-        { fn: addIFC, h: 5.55, w: 0.92 },
-        { fn: addBOC, h: 5.0, w: 1.0 },
-        { fn: addHSBC, h: 3.9, w: 1.15 },
-        { fn: addICC, h: 5.8, w: 0.96 },
-        { fn: addCentralPlaza, h: 4.6, w: 0.94 },
-        { fn: addJunkBoat, h: 2.7, w: 1.12 }
+        { h: 3.2, w: 1.08, density: 6 },
+        { h: 5.55, w: 0.92, density: 8 },
+        { h: 5.0, w: 1.0, density: 7 },
+        { h: 3.9, w: 1.15, density: 6 },
+        { h: 5.8, w: 0.96, density: 9 },
+        { h: 4.6, w: 0.94, density: 7 },
+        { h: 2.7, w: 1.12, density: 5 }
       ];
       const spacing = width / skyline.length;
       skyline.forEach((item, i) => {
-        const x = -width / 2 + spacing / 2 + i * spacing;
-        item.fn(root, x, item.h * landmarkScale, spacing * item.w * 0.58, depth);
+        const cx = -width / 2 + spacing / 2 + i * spacing;
+        addBuildingBars(root, cx, item.h, spacing * item.w * 0.58, depth, item.density);
       });
+    }
+
+    function addBuildingBars(group, cx, h, totalW, depth, density) {
+      const baseY = 0;
+      const d = depth * 1.1; // slightly deeper than background bars to avoid z-fighting
+      const cols = density;
+      const gap = totalW / (cols + 1);
+      const barW = Math.max(0.03, gap * 0.6);
+      for (let i = 0; i < cols; i++) {
+        const x = cx - totalW / 2 + gap * (i + 1);
+        // slight taper/variation for recognisability
+        const t = i / (cols - 1 || 1);
+        const heightVar = h * (0.85 + 0.3 * (0.5 - Math.abs(t - 0.5)));
+        group.add(box(barW, heightVar, d, x, heightVar / 2, depth * 0.18, 'building_bar'));
+      }
+    }
 
       // Lower bands inspired by the original souvenir base.
       
