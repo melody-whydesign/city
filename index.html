@@ -148,12 +148,12 @@
 
       <div class="twocol">
         <div class="row">
-          <label for="landmarkScale">Landmark height: <span id="landmarkScaleVal">1.00</span></label>
-          <input id="landmarkScale" type="range" min="0.75" max="1.35" value="1" step="0.05" />
+          <label for="barWidth">Bar width: <span id="barWidthVal">1.00</span></label>
+          <input id="barWidth" type="range" min="0.45" max="1.8" value="1" step="0.05" />
         </div>
         <div class="row">
-          <label for="detailDepth">Detail depth: <span id="detailDepthVal">1.00</span></label>
-          <input id="detailDepth" type="range" min="0.5" max="1.8" value="1" step="0.05" />
+          <label for="barDepth">Bar depth: <span id="barDepthVal">1.00</span></label>
+          <input id="barDepth" type="range" min="0.5" max="2.2" value="1" step="0.05" />
         </div>
       </div>
 
@@ -225,11 +225,11 @@
       cropEnd: document.querySelector('#cropEnd'),
       cropStartVal: document.querySelector('#cropStartVal'),
       cropEndVal: document.querySelector('#cropEndVal'),
-      landmarkScale: document.querySelector('#landmarkScale'),
-      detailDepth: document.querySelector('#detailDepth'),
+      barWidth: document.querySelector('#barWidth'),
+      barDepth: document.querySelector('#barDepth'),
       baseDepth: document.querySelector('#baseDepth'),
-      landmarkScaleVal: document.querySelector('#landmarkScaleVal'),
-      detailDepthVal: document.querySelector('#detailDepthVal'),
+      barWidthVal: document.querySelector('#barWidthVal'),
+      barDepthVal: document.querySelector('#barDepthVal'),
       baseDepthVal: document.querySelector('#baseDepthVal'),
       frontBtn: document.querySelector('#frontBtn'),
       exportBtn: document.querySelector('#exportBtn'),
@@ -241,8 +241,8 @@
     });
 
     function updateLabels() {
-      ui.landmarkScaleVal.textContent = Number(ui.landmarkScale.value).toFixed(2);
-      ui.detailDepthVal.textContent = Number(ui.detailDepth.value).toFixed(2);
+      ui.barWidthVal.textContent = Number(ui.barWidth.value).toFixed(2);
+      ui.barDepthVal.textContent = Number(ui.barDepth.value).toFixed(2);
       ui.baseDepthVal.textContent = Number(ui.baseDepth.value).toFixed(2);
       ui.cropStartVal.textContent = `${cropStartSeconds().toFixed(2)}s`;
       ui.cropEndVal.textContent = `${cropEndSeconds().toFixed(2)}s`; 
@@ -280,8 +280,7 @@
     }
 
     function addDetail(group, w, h, x, y, depth, name = 'raised_detail') {
-      const detailScale = Number(ui.detailDepth.value);
-      group.add(box(w, h, depth * 0.28 * detailScale, x, y, depth * 1.06, name));
+      group.add(box(w, h, depth * 0.28, x, y, depth * 1.06, name));
     }
 
     function addSpire(group, x, y, h, depth, name) {
@@ -337,9 +336,9 @@
       group.add(box(w * 0.58, h * 0.26, d, x, baseY + h * 0.69, depth * 0.35, 'boc_upper'));
       group.add(box(w * 0.25, h * 0.18, d, x, baseY + h * 0.91, depth * 0.35, 'boc_tip'));
       // Raised diagonal X pattern using thin rotated bars.
-      const diag1 = box(w * 1.05, 0.045, depth * 0.28 * Number(ui.detailDepth.value), x, baseY + h * 0.48, depth * 1.07, 'boc_diagonal_a');
+      const diag1 = box(w * 1.05, 0.045, depth * 0.28, x, baseY + h * 0.48, depth * 1.07, 'boc_diagonal_a');
       diag1.rotation.z = Math.PI / 4;
-      const diag2 = box(w * 1.05, 0.045, depth * 0.28 * Number(ui.detailDepth.value), x, baseY + h * 0.48, depth * 1.08, 'boc_diagonal_b');
+      const diag2 = box(w * 1.05, 0.045, depth * 0.28, x, baseY + h * 0.48, depth * 1.08, 'boc_diagonal_b');
       diag2.rotation.z = -Math.PI / 4;
       group.add(diag1, diag2);
     }
@@ -383,7 +382,9 @@
       const width = 9.4;
       const maxH = 5.8;
       const depth = Number(ui.baseDepth.value);
-      const landmarkScale = Number(ui.landmarkScale.value);
+      const landmarkScale = 1;
+      const barWidthScale = Number(ui.barWidth.value);
+      const barDepthScale = Number(ui.barDepth.value);
 
       root.add(box(width + 0.55, maxH + 0.55, depth * 0.42, 0, (maxH + 0.55) / 2, -depth * 0.35, 'solid_back_plate'));
       root.add(box(width + 0.85, 0.28, depth * 1.8, 0, 0.14, depth * 0.12, 'bottom_foot'));
@@ -391,13 +392,13 @@
       // Repeated facade rhythm. After recording, these become personal soundwave bars.
       const rhythmCount = 58;
       const rhythmSpacing = width / rhythmCount;
-      const rhythmW = rhythmSpacing * 0.34;
+      const rhythmW = rhythmSpacing * 0.34 * barWidthScale;
       const values = hasRecording && waveformBars.length ? resample(waveformBars, rhythmCount) : null;
       for (let i = 0; i < rhythmCount + 4; i++) {
         const x = -width / 2 - rhythmSpacing * 2 + i * rhythmSpacing;
         const v = values ? values[Math.max(0, Math.min(rhythmCount - 1, i - 2))] : 1;
         const barH = values ? 1.0 + v * 4.9 : maxH + 0.35;
-        root.add(box(rhythmW, barH, depth * 1.05, x, barH / 2 + 0.18, depth * 0.12, 'soundwave_facade_bar'));
+        root.add(box(rhythmW, barH, depth * 1.05 * barDepthScale, x, barH / 2 + 0.18, depth * 0.12, 'soundwave_facade_bar'));
       }
 
       // Fixed Hong Kong landmark sequence.
@@ -711,7 +712,7 @@
     ui.playBtn.addEventListener('click', playRecording);
     ui.frontBtn.addEventListener('click', setFrontView);
     ui.exportBtn.addEventListener('click', exportSTL);
-    for (const el of [ui.landmarkScale, ui.detailDepth, ui.baseDepth]) {
+    for (const el of [ui.barWidth, ui.barDepth, ui.baseDepth]) {
       el.addEventListener('input', buildModel);
     }
 
