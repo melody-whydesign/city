@@ -103,7 +103,9 @@
     scene.background = new THREE.Color(0xf5f5f7);
 
     const camera = new THREE.PerspectiveCamera(42, viewer.clientWidth / viewer.clientHeight, 0.1, 100);
-    camera.position.set(0, 4.4, 10.5);
+    camera.position.set(0, 2.8, 9.5);
+    camera.lookAt(0, 1.5, 0);
+    controls.target.set(0, 1.5, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias:true });
     renderer.setSize(viewer.clientWidth, viewer.clientHeight);
@@ -112,6 +114,7 @@
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.autoRotate = false;
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0x777777, 2.8));
     const key = new THREE.DirectionalLight(0xffffff, 2.1);
@@ -298,11 +301,23 @@
         box(model,gap*.32,h,d*.55,x,baseH,-.28,brown);
       }
 
-      const buildings = [
-        makeIFC(-5.05), makeClockTower(-4.05), makeHSBC(-3.05), makeBankOfChina(-2.05),
-        makeJardine(-1.0), makeCentralPlaza(.02), makePagoda(.92), makeConvention(2.0),
-        makeBuddha(2.9), makeTemple(4.15)
+            // Keep only major buildings (removed 3 smaller ones) and distribute evenly
+      const buildingFns = [
+        makeIFC,
+        makeClockTower,
+        makeHSBC,
+        makeBankOfChina,
+        makeJardine,
+        makeCentralPlaza,
+        makeConvention
       ];
+
+      const count = buildingFns.length;
+      const spacing = width / (count + 1);
+      const buildings = buildingFns.map((fn, i) => {
+        const x = -width/2 + spacing * (i + 1);
+        return fn(x);
+      });
       buildings.forEach(b => { b.position.y = baseH; b.position.z = .2; model.add(b); });
     }
 
