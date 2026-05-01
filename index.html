@@ -98,7 +98,7 @@
       display: block;
       border-radius: 10px;
       background: #f5f5f7;
-      cursor: not-allowed;
+      cursor: crosshair;
       touch-action: none;
     }
     .cropLabels { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
@@ -520,6 +520,9 @@
       ctx.strokeStyle = '#f8d000';
       ctx.lineWidth = 5;
       ctx.strokeRect(sx, 3, Math.max(3, ex - sx), h - 6);
+      ctx.fillStyle = '#f8d000';
+      ctx.fillRect(sx - 3, 0, 6, h);
+      ctx.fillRect(ex - 3, 0, 6, h);
 
       const px = duration ? (playStartSeconds / duration) * w : sx;
       ctx.strokeStyle = '#1d1d1f';
@@ -619,16 +622,18 @@
       return Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
     }
 
-    function setCropFromRatios(start, end) {
+    function setCropFromRatios(start, end, keepPlayStart = true) {
       start = Math.max(0, Math.min(0.98, start));
       end = Math.max(0.02, Math.min(1, end));
-      if (end - start < 0.02) {
-        if (dragMode === 'start') start = end - 0.02;
-        else end = start + 0.02;
-      }
+      if (end < start) [start, end] = [end, start];
+      if (end - start < 0.02) end = Math.min(1, start + 0.02);
       ui.cropStart.value = Math.round(start * 1000);
       ui.cropEnd.value = Math.round(end * 1000);
-      playStartSeconds = cropStartSeconds();
+      if (!keepPlayStart) playStartSeconds = cropStartSeconds();
+      else {
+        const ps = duration ? playStartSeconds / duration : start;
+        if (ps < start || ps > end) playStartSeconds = cropStartSeconds();
+      }
       computeWaveFromCrop();
       buildModel();
     }
@@ -641,16 +646,21 @@
       const e = Number(ui.cropEnd.value) / 1000;
       const edge = 0.035;
       isDraggingCrop = true;
-      if (Math.abs(r - s) < edge) dragMode = 'start';
-      else if (Math.abs(r - e) < edge) dragMode = 'end';
-      else if (r > s && r < e) {
+
+      if (Math.abs(r - s) < edge) {
+        dragMode = 'start';
+      } else if (Math.abs(r - e) < edge) {
+        dragMode = 'end';
+      } else if (r > s && r < e) {
         dragMode = 'move';
         dragOffset = r - s;
         playStartSeconds = r * duration;
         drawWaveCanvas();
       } else {
-        dragMode = 'end';
-        setCropFromRatios(Math.min(s, r), Math.max(s, r));
+        // Click outside the current selection to start a new crop from that point.
+        dragMode = 'new';
+        dragOffset = r;
+        setCropFromRatios(r, Math.min(1, r + 0.08), false);
       }
     });
 
@@ -660,11 +670,16 @@
       const s = Number(ui.cropStart.value) / 1000;
       const e = Number(ui.cropEnd.value) / 1000;
       const len = e - s;
-      if (dragMode === 'start') setCropFromRatios(r, e);
-      else if (dragMode === 'end') setCropFromRatios(s, r);
-      else {
+
+      if (dragMode === 'start') {
+        setCropFromRatios(r, e, false);
+      } else if (dragMode === 'end') {
+        setCropFromRatios(s, r, false);
+      } else if (dragMode === 'new') {
+        setCropFromRatios(dragOffset, r, false);
+      } else {
         const ns = Math.max(0, Math.min(1 - len, r - dragOffset));
-        setCropFromRatios(ns, ns + len);
+        setCropFromRatios(ns, ns + len, true);
       }
     });
 
