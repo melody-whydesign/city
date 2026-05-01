@@ -105,7 +105,6 @@
     const camera = new THREE.PerspectiveCamera(42, viewer.clientWidth / viewer.clientHeight, 0.1, 100);
     camera.position.set(0, 2.8, 9.5);
     camera.lookAt(0, 1.5, 0);
-    controls.target.set(0, 1.5, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias:true });
     renderer.setSize(viewer.clientWidth, viewer.clientHeight);
@@ -115,6 +114,8 @@
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.autoRotate = false;
+    controls.target.set(0, 1.5, 0);
+    controls.update();
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0x777777, 2.8));
     const key = new THREE.DirectionalLight(0xffffff, 2.1);
