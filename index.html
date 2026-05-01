@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hong Kong Landmark Souvenir Generator</title>
+  <title>Hong Kong Soundwave Souvenir</title>
   <style>
     :root {
       --bg: #ffffff;
@@ -119,8 +119,8 @@
 </head>
 <body>
   <header>
-    <h1>Hong Kong Landmark Souvenir Generator</h1>
-    <p>Preview a one-colour 3D-printable Hong Kong landmark souvenir. The audio side menu is kept for the future, but the souvenir now uses a fixed skyline made from recognisable Hong Kong landmark forms and raised detail patterns.</p>
+    <h1>Hong Kong Soundwave Souvenir</h1>
+    <p>Record a voice, crop the soundwave, and turn the vertical bars into a personal soundwave behind a single-colour Hong Kong skyline.</p>
   </header>
 
   <main>
@@ -132,18 +132,21 @@
           <button id="stopBtn" class="secondary" disabled>Stop</button>
           <button id="playBtn" class="secondary" disabled>Play</button>
         </div>
-        <div id="status" class="status">Record your voice, crop the waveform, and the repeated vertical bars will become your soundwave while the Hong Kong landmarks stay recognisable.</div>
+        <div id="status" class="status">Ready. Record audio to make the vertical bars follow your soundwave.</div>
       </div>
 
       <div class="row">
-        <label>2. Select soundwave section</label>
+        <label>2. Crop soundwave</label>
         <div class="waveWrap">
           <canvas id="waveCanvas" width="720" height="216"></canvas>
-          <div class="cropLabels" style="margin-top:10px"><span>Crop start: <b id="cropStartVal">0.00s</b></span><span>Crop end: <b id="cropEndVal">0.00s</b></span></div>
+          <div class="cropLabels" style="margin-top:10px">
+            <span>Crop start: <b id="cropStartVal">0.00s</b></span>
+            <span>Crop end: <b id="cropEndVal">0.00s</b></span>
+          </div>
           <input id="cropStart" type="hidden" value="0" />
           <input id="cropEnd" type="hidden" value="1000" />
         </div>
-        <div class="hint">After recording, drag directly on the waveform to crop the part used for the 3D soundwave bars. Click inside the selected area to choose replay start.</div>
+        <div class="hint">Drag on the waveform to create a crop. Drag the yellow crop to move it. Drag yellow edges to resize it.</div>
       </div>
 
       <div class="twocol">
@@ -166,13 +169,11 @@
         <button id="frontBtn" class="secondary">Front View</button>
         <button id="exportBtn" class="export">Export STL</button>
       </div>
-
-      
     </section>
 
     <section class="panel viewer">
       <canvas id="scene"></canvas>
-      <div class="badge">Default front view · Drag to rotate · Scroll to zoom</div>
+      <div class="badge">Drag to rotate · Scroll to zoom</div>
     </section>
   </main>
 
@@ -192,10 +193,10 @@
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.target.set(0, 3.05, 0);
+    controls.target.set(0, 2.9, 0);
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0x664433, 2.2));
-    const key = new THREE.DirectionalLight(0xffffff, 2.0);
+    const key = new THREE.DirectionalLight(0xffffff, 2.1);
     key.position.set(3, 7, 6);
     scene.add(key);
 
@@ -217,6 +218,7 @@
     const player = new Audio();
 
     const ui = {
+      status: document.querySelector('#status'),
       recordBtn: document.querySelector('#recordBtn'),
       stopBtn: document.querySelector('#stopBtn'),
       playBtn: document.querySelector('#playBtn'),
@@ -232,8 +234,7 @@
       barDepthVal: document.querySelector('#barDepthVal'),
       baseDepthVal: document.querySelector('#baseDepthVal'),
       frontBtn: document.querySelector('#frontBtn'),
-      exportBtn: document.querySelector('#exportBtn'),
-      status: document.querySelector('#status')
+      exportBtn: document.querySelector('#exportBtn')
     };
 
     window.addEventListener('error', (event) => {
@@ -245,16 +246,11 @@
       ui.barDepthVal.textContent = Number(ui.barDepth.value).toFixed(2);
       ui.baseDepthVal.textContent = Number(ui.baseDepth.value).toFixed(2);
       ui.cropStartVal.textContent = `${cropStartSeconds().toFixed(2)}s`;
-      ui.cropEndVal.textContent = `${cropEndSeconds().toFixed(2)}s`; 
+      ui.cropEndVal.textContent = `${cropEndSeconds().toFixed(2)}s`;
     }
 
-    function cropStartSeconds() {
-      return duration * Number(ui.cropStart.value) / 1000;
-    }
-
-    function cropEndSeconds() {
-      return duration * Number(ui.cropEnd.value) / 1000;
-    }
+    function cropStartSeconds() { return duration * Number(ui.cropStart.value) / 1000; }
+    function cropEndSeconds() { return duration * Number(ui.cropEnd.value) / 1000; }
 
     function clearGroup(group) {
       while (group.children.length) {
@@ -274,105 +270,39 @@
     }
 
     function setFrontView() {
-      camera.position.set(0, 3.05, 13.2);
-      controls.target.set(0, 3.05, 0);
+      camera.position.set(0, 3.0, 13.2);
+      controls.target.set(0, 2.9, 0);
       controls.update();
     }
 
-    function addDetail(group, w, h, x, y, depth, name = 'raised_detail') {
-      group.add(box(w, h, depth * 0.28, x, y, depth * 1.06, name));
-    }
+    function addBuildingBars(group, cx, h, totalW, depth, density, style = 0) {
+      const cols = density;
+      const gap = totalW / (cols + 1);
+      const barW = Math.max(0.03, gap * 0.55);
+      const d = depth * 1.35;
+      for (let i = 0; i < cols; i++) {
+        const x = cx - totalW / 2 + gap * (i + 1);
+        const t = cols === 1 ? 0.5 : i / (cols - 1);
+        let bh = h;
+        if (style === 0) bh = h * (0.72 + 0.28 * (1 - Math.abs(t - 0.5) * 2)); // LegCo dome-ish
+        if (style === 1) bh = h * (0.9 + 0.1 * Math.sin(t * Math.PI)); // IFC
+        if (style === 2) bh = h * (0.55 + 0.45 * (1 - t * 0.4)); // BOC taper
+        if (style === 3) bh = h * (0.78 + 0.12 * ((i % 2) ? 1 : 0)); // HSBC frame rhythm
+        if (style === 4) bh = h * (0.88 + 0.12 * (1 - Math.abs(t - 0.5) * 2)); // ICC
+        group.add(box(barW, bh, d, x, bh / 2, depth * 0.25, 'landmark_bar'));
+      }
 
-    function addSpire(group, x, y, h, depth, name) {
-      group.add(box(0.045, h, depth * 0.75, x, y + h / 2, depth * 0.58, name));
-    }
-
-    function addLandmarkLabel(group, textBlocks, x, y, w, depth) {
-      // Abstract tiny block lettering/glyphs for recognisability while remaining STL-safe.
-      const gap = w * 0.08;
-      const blockW = w * 0.09;
-      const blockH = 0.055;
-      const total = textBlocks.length * blockW + (textBlocks.length - 1) * gap;
-      let start = x - total / 2 + blockW / 2;
-      textBlocks.forEach((_, i) => addDetail(group, blockW, blockH, start + i * (blockW + gap), y, depth, 'landmark_micro_mark'));
-    }
-
-    function addLegCo(group, x, h, w, depth) {
-      const baseY = 0.32;
-      const d = depth * 1.45;
-      group.add(box(w * 1.25, h * 0.58, d, x, baseY + h * 0.29, depth * 0.35, 'legco_body'));
-      group.add(box(w * 1.55, h * 0.09, d, x, baseY + h * 0.63, depth * 0.35, 'legco_roof_band'));
-      group.add(box(w * 0.78, h * 0.12, d, x, baseY + h * 0.73, depth * 0.35, 'legco_pediment'));
-      group.add(box(w * 0.22, h * 0.12, d, x, baseY + h * 0.86, depth * 0.35, 'legco_center_crown'));
-      for (let i = -3; i <= 3; i++) addDetail(group, w * 0.035, h * 0.38, x + i * w * 0.16, baseY + h * 0.31, depth, 'legco_columns');
-      addLandmarkLabel(group, ['L','C'], x, baseY + h * 0.13, w, depth);
-    }
-
-    function addIFC(group, x, h, w, depth) {
-      const baseY = 0.32;
-      const d = depth * 1.45;
-      group.add(box(w * 0.65, h * 0.9, d, x, baseY + h * 0.45, depth * 0.35, 'ifc_tall_body'));
-      group.add(box(w * 0.48, h * 0.08, d, x, baseY + h * 0.94, depth * 0.35, 'ifc_cap'));
-      addSpire(group, x, baseY + h * 0.96, h * 0.13, depth, 'ifc_spire');
-      for (let i = -2; i <= 2; i++) addDetail(group, w * 0.025, h * 0.72, x + i * w * 0.1, baseY + h * 0.48, depth, 'ifc_vertical_ribs');
-      for (let i = 1; i <= 5; i++) addDetail(group, w * 0.52, 0.035, x, baseY + h * (0.18 + i * 0.12), depth, 'ifc_floor_lines');
-    }
-
-    function addICC(group, x, h, w, depth) {
-      const baseY = 0.32;
-      const d = depth * 1.45;
-      group.add(box(w * 0.8, h * 0.82, d, x, baseY + h * 0.41, depth * 0.35, 'icc_main_tower'));
-      group.add(box(w * 0.58, h * 0.13, d, x, baseY + h * 0.88, depth * 0.35, 'icc_upper_step'));
-      group.add(box(w * 0.36, h * 0.06, d, x, baseY + h * 0.99, depth * 0.35, 'icc_top'));
-      for (let i = -3; i <= 3; i++) addDetail(group, w * 0.022, h * 0.72, x + i * w * 0.085, baseY + h * 0.44, depth, 'icc_ribs');
-      addDetail(group, w * 0.68, 0.04, x, baseY + h * 0.77, depth, 'icc_sky_lobby_band');
-    }
-
-    function addBOC(group, x, h, w, depth) {
-      const baseY = 0.32;
-      const d = depth * 1.45;
-      group.add(box(w * 1.05, h * 0.28, d, x, baseY + h * 0.14, depth * 0.35, 'boc_lower'));
-      group.add(box(w * 0.82, h * 0.28, d, x, baseY + h * 0.42, depth * 0.35, 'boc_middle'));
-      group.add(box(w * 0.58, h * 0.26, d, x, baseY + h * 0.69, depth * 0.35, 'boc_upper'));
-      group.add(box(w * 0.25, h * 0.18, d, x, baseY + h * 0.91, depth * 0.35, 'boc_tip'));
-      // Raised diagonal X pattern using thin rotated bars.
-      const diag1 = box(w * 1.05, 0.045, depth * 0.28, x, baseY + h * 0.48, depth * 1.07, 'boc_diagonal_a');
-      diag1.rotation.z = Math.PI / 4;
-      const diag2 = box(w * 1.05, 0.045, depth * 0.28, x, baseY + h * 0.48, depth * 1.08, 'boc_diagonal_b');
-      diag2.rotation.z = -Math.PI / 4;
-      group.add(diag1, diag2);
-    }
-
-    function addHSBC(group, x, h, w, depth) {
-      const baseY = 0.32;
-      const d = depth * 1.45;
-      group.add(box(w * 1.28, h * 0.72, d, x, baseY + h * 0.36, depth * 0.35, 'hsbc_frame'));
-      group.add(box(w * 1.5, h * 0.11, d, x, baseY + h * 0.79, depth * 0.35, 'hsbc_top_truss'));
-      group.add(box(w * 1.42, h * 0.11, d, x, baseY + h * 0.08, depth * 0.35, 'hsbc_base_truss'));
-      for (let i = -2; i <= 2; i++) addDetail(group, w * 0.055, h * 0.62, x + i * w * 0.22, baseY + h * 0.38, depth, 'hsbc_vertical_structure');
-      for (let i = 1; i <= 4; i++) addDetail(group, w * 1.18, 0.04, x, baseY + h * (0.15 + i * 0.13), depth, 'hsbc_horizontal_structure');
-    }
-
-    function addCentralPlaza(group, x, h, w, depth) {
-      const baseY = 0.32;
-      const d = depth * 1.45;
-      group.add(box(w * 0.9, h * 0.78, d, x, baseY + h * 0.39, depth * 0.35, 'central_plaza_body'));
-      group.add(box(w * 0.48, h * 0.08, d, x, baseY + h * 0.84, depth * 0.35, 'central_plaza_cap'));
-      addSpire(group, x, baseY + h * 0.86, h * 0.2, depth, 'central_plaza_spire');
-      for (let i = 1; i <= 6; i++) addDetail(group, w * 0.72, 0.032, x, baseY + h * (0.13 + i * 0.1), depth, 'central_plaza_floor_lines');
-    }
-
-    function addJunkBoat(group, x, h, w, depth) {
-      const baseY = 0.32;
-      const d = depth * 1.45;
-      group.add(box(w * 1.45, h * 0.16, d, x, baseY + h * 0.12, depth * 0.35, 'junk_boat_hull'));
-      group.add(box(w * 0.08, h * 0.65, d, x, baseY + h * 0.45, depth * 0.35, 'junk_boat_mast'));
-      const sailA = box(w * 0.58, h * 0.08, d, x - w * 0.22, baseY + h * 0.55, depth * 0.35, 'junk_boat_sail_a');
-      sailA.rotation.z = -0.55;
-      const sailB = box(w * 0.52, h * 0.08, d, x + w * 0.23, baseY + h * 0.48, depth * 0.35, 'junk_boat_sail_b');
-      sailB.rotation.z = 0.55;
-      group.add(sailA, sailB);
-      addDetail(group, w * 1.35, 0.035, x, baseY + h * 0.22, depth, 'junk_boat_deck_line');
+      // simple raised identity marks, still single colour
+      if (style === 2) {
+        const diagA = box(totalW * 0.8, 0.045, depth * 0.5, cx, h * 0.48, depth * 1.05, 'boc_diagonal_a');
+        diagA.rotation.z = Math.PI / 4;
+        const diagB = box(totalW * 0.8, 0.045, depth * 0.5, cx, h * 0.48, depth * 1.06, 'boc_diagonal_b');
+        diagB.rotation.z = -Math.PI / 4;
+        group.add(diagA, diagB);
+      }
+      if (style === 3) {
+        for (let y = 0.9; y < h * 0.78; y += 0.45) group.add(box(totalW * 0.9, 0.04, depth * 0.5, cx, y, depth * 1.05, 'hsbc_floor_line'));
+      }
     }
 
     function buildModel() {
@@ -385,32 +315,33 @@
       const barWidthScale = Number(ui.barWidth.value);
       const barDepthScale = Number(ui.barDepth.value);
 
-      // Soundwave bars
+      // Foot/base only. No backdrop plate.
+      root.add(box(width + 0.85, 0.28, depth * 1.8, 0, 0.14, 0, 'bottom_foot'));
+
+      // Soundwave bars behind landmarks.
       const rhythmCount = 58;
       const rhythmSpacing = width / rhythmCount;
       const rhythmW = rhythmSpacing * 0.34 * barWidthScale;
       const values = hasRecording && waveformBars.length ? resample(waveformBars, rhythmCount) : null;
-
       for (let i = 0; i < rhythmCount; i++) {
         const x = -width / 2 + rhythmSpacing / 2 + i * rhythmSpacing;
         const v = values ? values[i] : 1;
-        const barH = values ? 1.0 + v * 4.9 : maxH;
-        root.add(box(rhythmW, barH, depth * 1.05 * barDepthScale, x, barH / 2, 0, 'soundwave_bar'));
+        const barH = values ? 0.75 + v * 5.05 : maxH;
+        root.add(box(rhythmW, barH, depth * 0.95 * barDepthScale, x, barH / 2 + 0.28, -depth * 0.08, 'soundwave_bar'));
       }
 
-      // Buildings (bar clusters)
+      // Front Hong Kong landmark bar clusters.
       const skyline = [
-        { h: 3.2, w: 1.08, density: 6 },
-        { h: 5.55, w: 0.92, density: 8 },
-        { h: 5.0, w: 1.0, density: 7 },
-        { h: 3.9, w: 1.15, density: 6 },
-        { h: 5.8, w: 0.96, density: 9 }
+        { h: 3.1, w: 1.05, density: 7, style: 0 },
+        { h: 5.45, w: 0.82, density: 8, style: 1 },
+        { h: 5.0, w: 0.95, density: 7, style: 2 },
+        { h: 3.8, w: 1.12, density: 8, style: 3 },
+        { h: 5.8, w: 0.85, density: 9, style: 4 }
       ];
-
       const spacing = width / skyline.length;
       skyline.forEach((item, i) => {
         const cx = -width / 2 + spacing / 2 + i * spacing;
-        addBuildingBars(root, cx, item.h, spacing * item.w * 0.6, depth);
+        addBuildingBars(root, cx, item.h, spacing * item.w * 0.62, depth, item.density, item.style);
       });
 
       drawWaveCanvas();
@@ -444,10 +375,7 @@
     }
 
     function computeWaveFromCrop() {
-      if (!rawSamples.length || !duration) {
-        waveformBars = [];
-        return;
-      }
+      if (!rawSamples.length || !duration) { waveformBars = []; return; }
       let start = cropStartSeconds();
       let end = cropEndSeconds();
       if (end <= start + 0.1) end = Math.min(duration, start + 0.1);
@@ -465,63 +393,6 @@
       rawSamples = Array.from(buffer.getChannelData(0));
       await audioCtx.close?.();
       computeWaveFromCrop();
-    }
-
-    function drawWaveCanvas() {
-      const c = ui.waveCanvas;
-      const ctx = c.getContext('2d');
-      const w = c.width;
-      const h = c.height;
-      ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = '#f5f5f7';
-      ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = '#d2d2d7';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, h / 2);
-      ctx.lineTo(w, h / 2);
-      ctx.stroke();
-
-      if (!rawSamples.length) {
-        ctx.fillStyle = '#6e6e73';
-        ctx.font = '24px system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Record audio to see the waveform', w / 2, h / 2 + 8);
-        return;
-      }
-
-      const bars = Math.min(360, w);
-      const per = Math.max(1, Math.floor(rawSamples.length / bars));
-      ctx.fillStyle = '#3a2018';
-      for (let i = 0; i < bars; i++) {
-        let peak = 0;
-        const start = i * per;
-        const end = Math.min(rawSamples.length, start + per);
-        for (let j = start; j < end; j++) peak = Math.max(peak, Math.abs(rawSamples[j]));
-        const barH = Math.max(2, peak * h * 0.82);
-        const x = i * w / bars;
-        ctx.fillRect(x, h / 2 - barH / 2, Math.max(1, w / bars - 1), barH);
-      }
-
-      const sx = Number(ui.cropStart.value) / 1000 * w;
-      const ex = Number(ui.cropEnd.value) / 1000 * w;
-      ctx.fillStyle = 'rgba(255,255,255,.68)';
-      ctx.fillRect(0, 0, sx, h);
-      ctx.fillRect(ex, 0, w - ex, h);
-      ctx.strokeStyle = '#f8d000';
-      ctx.lineWidth = 5;
-      ctx.strokeRect(sx, 3, Math.max(3, ex - sx), h - 6);
-      ctx.fillStyle = '#f8d000';
-      ctx.fillRect(sx - 3, 0, 6, h);
-      ctx.fillRect(ex - 3, 0, 6, h);
-
-      const px = duration ? (playStartSeconds / duration) * w : sx;
-      ctx.strokeStyle = '#1d1d1f';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(px, 0);
-      ctx.lineTo(px, h);
-      ctx.stroke();
     }
 
     function chooseSupportedMimeType() {
@@ -604,6 +475,63 @@
       }, 30);
     }
 
+    function drawWaveCanvas() {
+      const c = ui.waveCanvas;
+      const ctx = c.getContext('2d');
+      const w = c.width;
+      const h = c.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#f5f5f7';
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = '#d2d2d7';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, h / 2);
+      ctx.lineTo(w, h / 2);
+      ctx.stroke();
+
+      if (!rawSamples.length) {
+        ctx.fillStyle = '#6e6e73';
+        ctx.font = '24px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Record audio to see the waveform', w / 2, h / 2 + 8);
+        return;
+      }
+
+      const bars = Math.min(360, w);
+      const per = Math.max(1, Math.floor(rawSamples.length / bars));
+      ctx.fillStyle = '#3a2018';
+      for (let i = 0; i < bars; i++) {
+        let peak = 0;
+        const start = i * per;
+        const end = Math.min(rawSamples.length, start + per);
+        for (let j = start; j < end; j++) peak = Math.max(peak, Math.abs(rawSamples[j]));
+        const barH = Math.max(2, peak * h * 0.82);
+        const x = i * w / bars;
+        ctx.fillRect(x, h / 2 - barH / 2, Math.max(1, w / bars - 1), barH);
+      }
+
+      const sx = Number(ui.cropStart.value) / 1000 * w;
+      const ex = Number(ui.cropEnd.value) / 1000 * w;
+      ctx.fillStyle = 'rgba(255,255,255,.68)';
+      ctx.fillRect(0, 0, sx, h);
+      ctx.fillRect(ex, 0, w - ex, h);
+      ctx.strokeStyle = '#f8d000';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(sx, 3, Math.max(3, ex - sx), h - 6);
+      ctx.fillStyle = '#f8d000';
+      ctx.fillRect(sx - 3, 0, 6, h);
+      ctx.fillRect(ex - 3, 0, 6, h);
+
+      const px = duration ? (playStartSeconds / duration) * w : sx;
+      ctx.strokeStyle = '#1d1d1f';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(px, 0);
+      ctx.lineTo(px, h);
+      ctx.stroke();
+    }
+
     let isDraggingCrop = false;
     let dragMode = 'move';
     let dragOffset = 0;
@@ -637,18 +565,14 @@
       const e = Number(ui.cropEnd.value) / 1000;
       const edge = 0.035;
       isDraggingCrop = true;
-
-      if (Math.abs(r - s) < edge) {
-        dragMode = 'start';
-      } else if (Math.abs(r - e) < edge) {
-        dragMode = 'end';
-      } else if (r > s && r < e) {
+      if (Math.abs(r - s) < edge) dragMode = 'start';
+      else if (Math.abs(r - e) < edge) dragMode = 'end';
+      else if (r > s && r < e) {
         dragMode = 'move';
         dragOffset = r - s;
         playStartSeconds = r * duration;
         drawWaveCanvas();
       } else {
-        // Click outside the current selection to start a new crop from that point.
         dragMode = 'new';
         dragOffset = r;
         setCropFromRatios(r, Math.min(1, r + 0.08), false);
@@ -661,14 +585,10 @@
       const s = Number(ui.cropStart.value) / 1000;
       const e = Number(ui.cropEnd.value) / 1000;
       const len = e - s;
-
-      if (dragMode === 'start') {
-        setCropFromRatios(r, e, false);
-      } else if (dragMode === 'end') {
-        setCropFromRatios(s, r, false);
-      } else if (dragMode === 'new') {
-        setCropFromRatios(dragOffset, r, false);
-      } else {
+      if (dragMode === 'start') setCropFromRatios(r, e, false);
+      else if (dragMode === 'end') setCropFromRatios(s, r, false);
+      else if (dragMode === 'new') setCropFromRatios(dragOffset, r, false);
+      else {
         const ns = Math.max(0, Math.min(1 - len, r - dragOffset));
         setCropFromRatios(ns, ns + len, true);
       }
@@ -693,8 +613,8 @@
     function exportSTL() {
       const exporter = new STLExporter();
       const stl = exporter.parse(root, { binary: false });
-      download('hong-kong-landmark-souvenir.stl', stl);
-      ui.status.textContent = 'STL exported. Open it in your slicer and print in one dark-brown material.';
+      download('hong-kong-soundwave-souvenir.stl', stl);
+      ui.status.textContent = 'STL exported. Open it in your slicer and print in one material.';
     }
 
     ui.recordBtn.addEventListener('click', startRecording);
@@ -702,6 +622,7 @@
     ui.playBtn.addEventListener('click', playRecording);
     ui.frontBtn.addEventListener('click', setFrontView);
     ui.exportBtn.addEventListener('click', exportSTL);
+
     for (const el of [ui.barWidth, ui.barDepth, ui.baseDepth]) {
       el.addEventListener('input', buildModel);
     }
