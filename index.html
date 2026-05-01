@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voice Wave Souvenir Generator</title>
+  <style>
+    :root { --bg:#111; --panel:#1b1b1b; --text:#f5f5f5; --muted:#aaa; --accent:#c58a62; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background:var(--bg); color:var(--text); }
+    header { padding:24px; max-width:1100px; margin:auto; }
+    h1 { margin:0 0 8px; font-size:clamp(28px,4vw,48px); }
+    p { color:var(--muted); line-height:1.55; }
+    main { display:grid; grid-template-columns: 340px 1fr; gap:18px; max-width:1100px; margin:0 auto 32px; padding:0 18px; }
+    aside { background:var(--panel); border-radius:18px; padding:18px; height:max-content; }
+    button, input[type="file"]::file-selector-button { border:0; border-radius:12px; padding:12px 14px; font-weight:700; cursor:pointer; }
+    button { width:100%; margin:6px 0; background:var(--accent); color:#111; }
+    button.secondary { background:#333; color:var(--text); }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+    label { display:block; margin:14px 0 6px; color:#ddd; font-size:14px; }
+    input[type="range"] { width:100%; }
+    .row { display:flex; gap:8px; }
+    .row button { flex:1; }
+    #viewer { min-height:620px; border-radius:18px; overflow:hidden; background:#222; position:relative; }
+    #hint { position:absolute; left:14px; bottom:14px; color:#ccc; background:rgba(0,0,0,.45); padding:8px 10px; border-radius:10px; font-size:13px; }
+    canvas#wave { width:100%; height:76px; background:#0e0e0e; border-radius:12px; margin-top:12px; }
+    .small { font-size:13px; color:#aaa; }
+    @media (max-width: 820px) { main { grid-template-columns:1fr; } #viewer { min-height:480px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Voice Wave Souvenir Generator</h1>
+    <p>Record your voice, turn the waveform into irregular brown slats, keep the long regular slats as the architectural base, preview in 3D, then export an STL file for 3D printing.</p>
+  </header>
+
+  <main>
+    <aside>
+      <div class="row">
+        <button id="recordBtn">Record</button>
+        <button id="stopBtn" class="secondary" disabled>Stop</button>
+      </div>
+      <button id="playBtn" class="secondary" disabled>Play recording</button>
+      <label>Or upload audio</label>
+      <input id="audioFile" type="file" accept="audio/*" />
+      <canvas id="wave" width="600" height="120"></canvas>
+
+      <label>Number of slats: <span id="slatCountText">72</span></label>
+      <input id="slatCount" type="range" min="32" max="120" value="72" />
+
+      <label>Wave height: <span id="heightText">1.8</span></label>
+      <input id="waveHeight" type="range" min="0.5" max="3.2" step="0.1" value="1.8" />
+
+      <label>Object depth: <span id="depthText">0.22</span></label>
+      <input id="depth" type="range" min="0.08" max="0.6" step="0.01" value="0.22" />
+
+      <label>Logo size: <span id="logoText">1.0</span></label>
+      <input id="logoSize" type="range" min="0.3" max="1.8" step="0.1" value="1.0" />
+
+      <button id="exportBtn">Export STL</button>
+      <p class="small">Note: replace the simple SVG emblem in the code with an official vector logo if you need exact logo detail.</p>
+    </aside>
+
+    <section id="viewer"><div id="hint">Drag to rotate · Scroll to zoom</div></section>
+  </main>
+
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+    import { STLExporter } from 'https://unpkg.com/three@0.160.0/examples/jsm/exporters/STLExporter.js';
+
+    const viewer = document.getElementById('viewer');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x222222);
+
+    const camera = new THREE.PerspectiveCamera(45, viewer.clientWidth / viewer.clientHeight, 0.1, 100);
+    camera.position.set(0, 4.2, 10);
+
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    viewer.prepend(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 2.8));
+    const light = new THREE.DirectionalLight(0xffffff, 2.2);
+    light.position.set(3, 5, 5);
+    scene.add(light);
+
+    const model = new THREE.Group();
+    scene.add(model);
+
+    const matBase = new THREE.MeshStandardMaterial({ color:0x6f4b38, roughness:.68 });
+    const matLong = new THREE.MeshStandardMaterial({ color:0x8a735c, roughness:.72 });
+    const matWaveA = new THREE.MeshStandardMaterial({ color:0x6b3f32, roughness:.74 });
+    const matWaveB = new THREE.MeshStandardMaterial({ color:0xcab89d, roughness:.72 });
+    const matDark = new THREE.MeshStandardMaterial({ color:0x2a2522, roughness:.8 });
+    const matLogo = new THREE.MeshStandardMaterial({ color:0xf5ead7, roughness:.5 });
+
+    let amplitudes = Array.from({length:72}, (_, i) => .35 + .25*Math.sin(i*.45) + Math.random()*.18);
+    let audioURL = null;
+    let recorder, chunks = [];
+
+    const $ = id => document.getElementById(id);
+    const slatCount = $('slatCount'), waveHeight = $('waveHeight'), depth = $('depth'), logoSize = $('logoSize');
+
+    function clearGroup(g) {
+      while (g.children.length) {
+        const o = g.children.pop();
+        o.geometry?.dispose?.();
+        if (Array.isArray(o.material)) o.material.forEach(m => m.dispose()); else o.material?.dispose?.();
+      }
+    }
+
+    function makeBox(w, h, d, x, y, z, mat) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      mesh.position.set(x, y + h/2, z);
+      return mesh;
+    }
+
+    function createLogo(scale) {
+      // A simple raised emblem placeholder. Replace this with a precise SVG/vector logo if needed.
+      const g = new THREE.Group();
+      const stem = makeBox(.06*scale, .75*scale, .035, 0, 0, .18, matLogo);
+      g.add(stem);
+      for (const side of [-1, 1]) {
+        const leaf = new THREE.Mesh(new THREE.SphereGeometry(.18*scale, 24, 12), matLogo);
+        leaf.scale.set(1.35, .38, .09);
+        leaf.rotation.z = side * .62;
+        leaf.position.set(side*.16*scale, .5*scale, .18);
+        g.add(leaf);
+      }
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(.28*scale, .025*scale, 32, 80), matLogo);
+      ring.rotation.x = Math.PI/2;
+      ring.scale.y = .55;
+      ring.position.set(0, .15*scale, .18);
+      g.add(ring);
+      const base = makeBox(.72*scale, .035*scale, .035, 0, 0, .18, matLogo);
+      g.add(base);
+      return g;
+    }
+
+    function buildModel() {
+      clearGroup(model);
+      const n = +slatCount.value;
+      const hFactor = +waveHeight.value;
+      const d = +depth.value;
+      const logoScale = +logoSize.value;
+      $('slatCountText').textContent = n;
+      $('heightText').textContent = hFactor.toFixed(1);
+      $('depthText').textContent = d.toFixed(2);
+      $('logoText').textContent = logoScale.toFixed(1);
+
+      const width = 8.8, gap = width / n, slatW = gap * .32;
+      const baseH = .18;
+      model.add(makeBox(width + .65, baseH, 1.15, 0, 0, 0, matBase));
+
+      // Regular long rear stripes: the stable architectural base.
+      for (let i=0; i<n; i++) {
+        const x = -width/2 + i*gap + gap/2;
+        const h = 4.9 + .25 * Math.sin(i * .08);
+        model.add(makeBox(slatW, h, d*.7, x, baseH, -.18, matLong));
+      }
+
+      // Horizontal bands echoing the original wall image.
+      model.add(makeBox(width*.78, .12, .08, 0, 1.55, .12, matDark));
+      model.add(makeBox(width*.68, .10, .08, 0, 1.82, .12, matWaveA));
+      model.add(makeBox(width*.78, .08, .08, 0, 1.25, .12, matWaveB));
+
+      // Voice waveform slats in front.
+      const samples = resample(amplitudes, n);
+      for (let i=0; i<n; i++) {
+        const x = -width/2 + i*gap + gap/2;
+        const amp = THREE.MathUtils.clamp(samples[i], 0, 1);
+        const h = .55 + amp * hFactor + Math.random()*.03;
+        const mat = i % 7 === 0 ? matWaveB : (i % 5 === 0 ? matDark : matWaveA);
+        model.add(makeBox(slatW*1.45, h, d, x, baseH, .12, mat));
+      }
+
+      const logo = createLogo(logoScale);
+      logo.position.set(0, 1.55, .38);
+      model.add(logo);
+
+      model.rotation.x = -0.05;
+    }
+
+    function resample(arr, n) {
+      if (!arr.length) return Array(n).fill(.2);
+      return Array.from({length:n}, (_, i) => arr[Math.floor(i * arr.length / n)] ?? 0);
+    }
+
+    function drawWave(arr) {
+      const c = $('wave'), ctx = c.getContext('2d');
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.fillStyle = '#0e0e0e'; ctx.fillRect(0,0,c.width,c.height);
+      ctx.strokeStyle = '#c58a62'; ctx.lineWidth = 3; ctx.beginPath();
+      arr.forEach((v,i) => {
+        const x = i/(arr.length-1)*c.width;
+        const y = c.height/2 - v*c.height*.42;
+        i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+      });
+      ctx.stroke();
+    }
+
+    async function decodeAudio(fileOrBlob) {
+      const arrayBuffer = await fileOrBlob.arrayBuffer();
+      const ctx = new AudioContext();
+      const buffer = await ctx.decodeAudioData(arrayBuffer);
+      const data = buffer.getChannelData(0);
+      const bins = +slatCount.value;
+      const block = Math.floor(data.length / bins);
+      const values = [];
+      for (let i=0; i<bins; i++) {
+        let sum = 0;
+        for (let j=0; j<block; j++) sum += Math.abs(data[i*block+j] || 0);
+        values.push(sum / Math.max(block,1));
+      }
+      const max = Math.max(...values) || 1;
+      amplitudes = values.map(v => Math.pow(v / max, .65));
+      drawWave(amplitudes);
+      buildModel();
+      await ctx.close();
+    }
+
+    $('recordBtn').onclick = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      chunks = [];
+      recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = e => chunks.push(e.data);
+      recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type:'audio/webm' });
+        audioURL = URL.createObjectURL(blob);
+        $('playBtn').disabled = false;
+        await decodeAudio(blob);
+        stream.getTracks().forEach(t => t.stop());
+      };
+      recorder.start();
+      $('recordBtn').disabled = true;
+      $('stopBtn').disabled = false;
+    };
+
+    $('stopBtn').onclick = () => {
+      recorder?.stop();
+      $('recordBtn').disabled = false;
+      $('stopBtn').disabled = true;
+    };
+
+    $('playBtn').onclick = () => audioURL && new Audio(audioURL).play();
+    $('audioFile').onchange = e => e.target.files[0] && decodeAudio(e.target.files[0]);
+
+    [slatCount, waveHeight, depth, logoSize].forEach(el => el.addEventListener('input', buildModel));
+
+    $('exportBtn').onclick = () => {
+      const exporter = new STLExporter();
+      const stl = exporter.parse(model, { binary:false });
+      const blob = new Blob([stl], { type:'model/stl' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'voice-wave-souvenir.stl';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+
+    function animate() {
+      controls.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    addEventListener('resize', () => {
+      camera.aspect = viewer.clientWidth / viewer.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    });
+
+    drawWave(amplitudes);
+    buildModel();
+    animate();
+  </script>
+</body>
+</html>
